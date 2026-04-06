@@ -1,0 +1,8 @@
+{
+    "goproxy-android-amd64.md5": "f384858a0f78ee216c6536bf437f9f1e",
+    "goproxy-android-arm.md5": "245279fb92a322eeb415af978372246b",
+    "goproxy-android-arm64.md5": "e617668ff41408d0a3f6887081bf9465",
+    "goproxy-android-amd64": "https://gitee.com/lzxw9527/jiuyue/raw/master/go/goproxy-android-amd64",
+    "goproxy-android-arm": "https://gitee.com/lzxw9527/jiuyue/raw/master/go/goproxy-android-arm",
+    "goproxy-android-arm64": "https://gitee.com/lzxw9527/jiuyue/raw/master/go/goproxy-android-arm64"
+}
