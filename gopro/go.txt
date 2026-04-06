@@ -1,0 +1,8 @@
+{
+    "goProxy_linux.md5": "f384858a0f78ee216c6536bf437f9f1e",
+    "goProxy_armV7.md5": "245279fb92a322eeb415af978372246b",
+    "goProxy_arm64.md5": "e617668ff41408d0a3f6887081bf9465",
+    "goProxy_linux": "https://gitee.com/lzxw9527/jiuyue/raw/master/gopro/goProxy_linux",
+    "goProxy_armV7": "https://gitee.com/lzxw9527/jiuyue/raw/master/gopro/goProxy_armV7",
+    "goProxy_arm64": "https://gitee.com/lzxw9527/jiuyue/raw/master/gopro/goProxy_arm64"
+}
