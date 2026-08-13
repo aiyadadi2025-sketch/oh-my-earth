@@ -2,30 +2,50 @@
       "key": "爱优腾",
       "name": "🥇爱优腾芒哔｜影视",
       "type": 3,
-      "api": "./py/爱优腾芒哔.js"
+      "api": "./py/爱优腾芒哔.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },{
       "key": "山楂影视",
       "name": "🥇山楂｜影视",
       "type": 3,
-      "api": "./py/山楂影视.py"
+      "api": "./py/山楂影视.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
 {
       "key": "多多影视",
       "name": "🥇多多｜影视",
       "type": 3,
-      "api": "./py/多多影视.py"
+      "api": "./py/多多影视.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
 {
       "key": "茶杯狐",
       "name": "🥇茶杯狐｜影视",
       "type": 3,
-      "api": "./py/茶杯狐.py"
+      "api": "./py/茶杯狐.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
 {
       "key": "开心影视",
       "name": "🥇开心｜影视",
       "type": 3,
-      "api": "./py/开心影院.py"
+      "api": "./py/开心影院.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },{      "key": "优酷",      "name": "🥇优酷｜影视",      "type": 3,      "api": "./js/drpy2.min.js",      "ext": "./js/优酷视频.js"    },
 {      "key": "爱奇艺",      "name": "🥇爱奇艺｜影视",      "type": 3,      "api": "./js/drpy2.min.js",      "ext": "./js/爱奇艺.js"    },
 {      "key": "腾讯",      "name": "🥇腾讯｜影视",      "type": 3,      "api": "./js/drpy2.min.js",      "ext": "./js/腾讯视频.js"    },
@@ -33,56 +53,90 @@
       "key": "荐片123",
       "name": "🥇荐片｜影视",
       "type": 3,
-      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/荐片.js"
+      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/荐片.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "高清点播",
       "name": "🥇高清｜点播",
       "type": 3,
-      "api": "./py/hqvod.py"
+      "api": "./py/hqvod.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "毒舌影视",
       "name": "🥇毒舌｜影视",
       "type": 3,
-      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/毒舌影视.js"
+      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/毒舌影视.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "永1乐",
       "name": "🥇永乐｜影视",
       "type": 3,
-      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/永乐视频.js"
+      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/永乐视频.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "金牌123",
       "name": "🥇金牌｜影视",
       "type": 3,
-      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/金牌影院.js"
+      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/金牌影院.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "韩剧巴士",
       "name": "🥇韩剧｜巴士",
       "type": 3,
-      "api": "./py/韩剧巴士.py"
+      "api": "./py/韩剧巴士.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "独播库",
       "name": "🥇播库┃影视",
       "type": 3,
-      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/VmOlRys8_vip.js"
+      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/VmOlRys8_vip.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "戒",
       "name": "🥇视界｜影视",
       "type": 3,
       "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/界.py",
-      "changeable": 1
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1      
     },
     {
       "key": "华数",
       "name": "🥇华数｜影视",
       "type": 3,
       "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/华数.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
       "changeable": 1
     },
     {
@@ -90,19 +144,31 @@
       "name": "🥇看剧丨影视",
       "type": 3,
       "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/AppToV5.py",
-      "ext": "http://43.248.117.123:4680"
+      "ext": "http://43.248.117.123:4680",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "猎手",
       "name": "🥇猎手丨影视",
       "type": 3,
-      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/猎手.py"
+      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/猎手.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "央视",
       "name": "🥇央视丨影视",
       "type": 3,
-      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/央视.py"
+      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/央视.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "py_文才",
@@ -136,19 +202,30 @@
         "type": "rect",
         "ratio": 1
       },
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
       "changeable": 1
     },
     {
       "key": "两个BT",
       "name": "🥇两个丨影视",
       "type": 3,
-      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/两个BT.py"
+      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/两个BT.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "枫叶",
       "name": "🥇枫叶丨影视",
       "type": 3,
-      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/枫叶.py"
+      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/枫叶.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "电影港",
