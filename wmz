@@ -3,6 +3,29 @@
       "name": "🥇爱优腾芒哔｜影视",
       "type": 3,
       "api": "./py/爱优腾芒哔.js"
+    },{
+      "key": "山楂影视",
+      "name": "🥇山楂｜影视",
+      "type": 3,
+      "api": "./py/山楂影视.py"
+    },
+{
+      "key": "多多影视",
+      "name": "🥇多多｜影视",
+      "type": 3,
+      "api": "./py/多多影视.py"
+    },
+{
+      "key": "茶杯狐",
+      "name": "🥇茶杯狐｜影视",
+      "type": 3,
+      "api": "./py/茶杯狐.py"
+    },
+{
+      "key": "开心影视",
+      "name": "🥇开心｜影视",
+      "type": 3,
+      "api": "./py/开心影院.py"
     },{      "key": "优酷",      "name": "🥇优酷｜影视",      "type": 3,      "api": "./js/drpy2.min.js",      "ext": "./js/优酷视频.js"    },
 {      "key": "爱奇艺",      "name": "🥇爱奇艺｜影视",      "type": 3,      "api": "./js/drpy2.min.js",      "ext": "./js/爱奇艺.js"    },
 {      "key": "腾讯",      "name": "🥇腾讯｜影视",      "type": 3,      "api": "./js/drpy2.min.js",      "ext": "./js/腾讯视频.js"    },
