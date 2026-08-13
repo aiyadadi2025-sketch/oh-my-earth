@@ -245,7 +245,7 @@
       "key": "4K秒播",
       "name": "💯4K秒播｜影视",
       "type": 3,
-      "api": "./py/4K秒播.py",
+      "api": "./py/4k秒播.py",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
