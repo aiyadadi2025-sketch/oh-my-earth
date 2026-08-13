@@ -36,6 +36,12 @@
       "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/js/荐片.js"
     },
     {
+      "key": "高清点播",
+      "name": "🥇高清｜点播",
+      "type": 3,
+      "api": "./py/hqvod.py"
+    },
+    {
       "key": "毒舌影视",
       "name": "🥇毒舌｜影视",
       "type": 3,
