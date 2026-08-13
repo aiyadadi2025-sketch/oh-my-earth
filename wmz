@@ -241,7 +241,17 @@
       "quickSearch": 1,
       "filterable": 1,
       "ext": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/XYQHiker/电影港.json"
-    },{"key":"山楂","name":"💯山楂丨4K影视","type":3,"api":"csp_PianKu8"},{
+    },{
+      "key": "4K秒播",
+      "name": "💯4K秒播｜影视",
+      "type": 3,
+      "api": "./py/4K秒播.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1,
+    },
+    {"key":"山楂","name":"💯山楂丨4K影视","type":3,"api":"csp_PianKu8"},{
       "key": "夸快夸快",
       "name": "💯夸快｜4K弹幕",
       "type": 3,
