@@ -251,6 +251,46 @@
       "filterable": 1,
       "changeable": 1
     },
+    {
+      "key": "4Kmp",
+      "name": "💯4Kmp｜影视",
+      "type": 3,
+      "api": "./py/4kmp.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+{
+      "key": "4KVM",
+      "name": "💯4KVM｜影视",
+      "type": 3,
+      "api": "./py/4KVM.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+{
+      "key": "4k星辰",
+      "name": "💯4k星辰｜影视",
+      "type": 3,
+      "api": "./py/4k星辰.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+{
+      "key": "4K影视",
+      "name": "💯4K影视｜影视",
+      "type": 3,
+      "api": "./py/4K影视.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
     {"key":"山楂","name":"💯山楂丨4K影视","type":3,"api":"csp_PianKu8"},{
       "key": "夸快夸快",
       "name": "💯夸快｜4K弹幕",
