@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 电影先生 (silidm.com) TVBox 爬虫脚本
-独立运行，不依赖 base.spider 基类
+使用标准库 urllib，不依赖 requests
 """
 import re
 import json
 import urllib.parse
-import requests
+import urllib.request
+import ssl
 
 class Spider:
     name = "电影先生"
@@ -18,13 +19,17 @@ class Spider:
     class_url = ["dy", "juji", "dongman", "zongyi"]
 
     def fetch(self, url, headers=None):
-        if headers is None:
-            headers = {}
-        headers["User-Agent"] = self.ua
         try:
-            r = requests.get(url, headers=headers, timeout=10)
-            r.encoding = "utf-8"
-            return r.text
+            req = urllib.request.Request(url)
+            req.add_header("User-Agent", self.ua)
+            if headers:
+                for k, v in headers.items():
+                    req.add_header(k, v)
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
+                return resp.read().decode("utf-8", errors="ignore")
         except Exception as e:
             print(f"[{self.name}] fetch error: {e}")
             return ""
@@ -37,7 +42,7 @@ class Spider:
             return {"class": classes, "filters": {}}
         except Exception as e:
             print(f"[{self.name}] homeContent error: {e}")
-            return {"class": [{"type_id": self.class_url[i], "type_name": cname} for i, cname in enumerate(self.class_name)], "filters": {}}
+            return {"class": classes, "filters": {}}
 
     def categoryContent(self, tid, pg, filter=False, content=None):
         try:
@@ -46,13 +51,7 @@ class Spider:
                 url = url + "?page=" + str(pg)
             html = self.fetch(url)
             items = self._parse_items(html)
-            return {
-                "list": items,
-                "page": int(pg),
-                "pagecount": 999,
-                "limit": 20,
-                "total": len(items),
-            }
+            return {"list": items, "page": int(pg), "pagecount": 999, "limit": 20, "total": len(items)}
         except Exception as e:
             print(f"[{self.name}] categoryContent error: {e}")
             return {}
@@ -77,13 +76,7 @@ class Spider:
                 url = url + "?page=" + str(pg)
             html = self.fetch(url)
             items = self._parse_items(html)
-            return {
-                "list": items,
-                "page": int(pg),
-                "pagecount": 999,
-                "limit": 20,
-                "total": len(items),
-            }
+            return {"list": items, "page": int(pg), "pagecount": 999, "limit": 20, "total": len(items)}
         except Exception as e:
             print(f"[{self.name}] searchContent error: {e}")
             return {}
@@ -100,107 +93,85 @@ class Spider:
         return {"parse": 1, "url": self.base_url + id, "header": {"User-Agent": self.ua}}
 
     def _build_vod_item(self, link, title, pic, remark, year="", area=""):
-        return {
-            "vod_id": link,
-            "vod_name": title,
-            "vod_pic": pic,
-            "vod_remarks": remark,
-            "vod_year": year,
-            "vod_area": area,
-            "vod_play_from": self.name,
-            "vod_play_url": "",
-        }
+        return {"vod_id": link, "vod_name": title, "vod_pic": pic, "vod_remarks": remark, "vod_year": year, "vod_area": area, "vod_play_from": self.name, "vod_play_url": ""}
 
     def _parse_items(self, html):
         items = []
         seen = set()
-        item_pattern = r'<div class="module-item-cover">.*?</div>\s*</div>\s*</div>\s*</div>\s*</div>'
-        for m in re.finditer(item_pattern, html, re.S):
+        pattern = r'<div class="module-item-cover">.*?</div>\s*</div>\s*</div>\s*</div>\s*</div>'
+        for m in re.finditer(pattern, html, re.S):
             block = m.group(0)
-            link_m = re.search(r'href=["\x27](/video/\d+\.html)["\x27][^>]*title=["\x27]([^"\x27]+)["\x27]', block)
-            if not link_m:
+            lm = re.search(r'href=["\x27](/video/\d+\.html)["\x27][^>]*title=["\x27]([^"\x27]+)["\x27]', block)
+            if not lm:
                 continue
-            link = link_m.group(1)
-            title = link_m.group(2).strip()
+            link = lm.group(1)
+            title = lm.group(2).strip()
             if link in seen:
                 continue
             seen.add(link)
-            pic_m = re.search(r'data-src=["\x27](https?://[^"\x27]+)["\x27]', block)
-            pic = pic_m.group(1) if pic_m else ""
-            caption_m = re.search(r'class="module-item-caption">(.*?)</div>', block, re.S)
-            year = ""
-            area = ""
-            if caption_m:
-                caption = caption_m.group(1)
-                spans = re.findall(r'<span[^>]*>([^<]*)</span>', caption)
+            pm = re.search(r'data-src=["\x27](https?://[^"\x27]+)["\x27]', block)
+            pic = pm.group(1) if pm else ""
+            cm = re.search(r'class="module-item-caption">(.*?)</div>', block, re.S)
+            year, area = "", ""
+            if cm:
+                spans = re.findall(r'<span[^>]*>([^<]*)</span>', cm.group(1))
                 year = spans[0] if len(spans) > 0 and spans[0].isdigit() else ""
                 area = spans[2] if len(spans) > 2 else ""
-            text_m = re.search(r'class="module-item-text">([^<]+)</div>', block)
-            remark = text_m.group(1).strip() if text_m else ""
+            tm = re.search(r'class="module-item-text">([^<]+)</div>', block)
+            remark = tm.group(1).strip() if tm else ""
             items.append(self._build_vod_item(link, title, pic, remark, year, area))
         return items
 
     def _parse_detail(self, html):
-        title_m = re.search(r'<title>([^<]+)</title>', html)
-        raw_title = title_m.group(1).strip() if title_m else ""
-        title = re.sub(r'\s*[-–—|].*', '', raw_title).strip()
+        tm = re.search(r'<title>([^<]+)</title>', html)
+        raw = tm.group(1).strip() if tm else ""
+        title = re.sub(r'\s*[-|].*', '', raw).strip()
         pics = re.findall(r'data-src=["\x27](https?://[^"\x27]+)["\x27]', html)
         pic = pics[0] if pics else ""
-        info_m = re.search(r'class="module-info-content[^>]*>(.*?)</div>\s*</div>\s*</div>', html, re.DOTALL)
-        info_text = info_m.group(1) if info_m else ""
+        im = re.search(r'class="module-info-content[^>]*>(.*?)</div>\s*</div>\s*</div>', html, re.DOTALL)
+        info = im.group(1) if im else ""
         year = ""
+        ym = re.search(r'<span>(\d{4})</span>', info)
+        year = ym.group(1) if ym else ""
         area = ""
+        am = re.search(r'href="(/show/\d+---([^<]*))"', info)
+        area = am.group(2).strip() if am else ""
         content = ""
-        year_m = re.search(r'<span>(\d{4})</span>', info_text)
-        year = year_m.group(1) if year_m else ""
-        area_m = re.search(r'href="(/show/\d+---([^<]*))"', info_text)
-        area = area_m.group(2).strip() if area_m else ""
-        desc_m = re.search(r'class="module-info-desc[^>]*>[\s\S]*?<p[^>]*>(.*?)</p>', html, re.DOTALL)
-        if desc_m:
-            content = re.sub(r'<[^>]+>', '', desc_m.group(1)).strip()
+        dm = re.search(r'class="module-info-desc[^>]*>[\s\S]*?<p[^>]*>(.*?)</p>', html, re.DOTALL)
+        if dm:
+            content = re.sub(r'<[^>]+>', '', dm.group(1)).strip()
         plays = re.findall(r'href="(/play/\d+-(\d+)-\d+\.html)"[^>]*>(.*?)</a>', html, re.DOTALL)
         lines = {}
-        for play_link, line_id, play_text in plays:
-            text = re.sub(r'<[^>]+>', '', play_text).strip()
-            if not text:
-                continue
-            lines.setdefault(line_id.strip(), []).append((text, play_link))
+        for pl, lid, pt in plays:
+            txt = re.sub(r'<[^>]+>', '', pt).strip()
+            if txt:
+                lines.setdefault(lid.strip(), []).append((txt, pl))
         if not lines:
             plays2 = re.findall(r'href="(/play/[^"\s]+)"[^>]*title="([^"]+)"', html)
-            for play_link, ep_name in plays2:
-                lines.setdefault("1", []).append((ep_name, play_link))
-        play_from_list = []
-        play_url_list = []
+            for pl, en in plays2:
+                lines.setdefault("1", []).append((en, pl))
+        pf, pu = [], []
         for lid in sorted(lines.keys()):
             eps = lines[lid]
-            play_from_list.append("线路" + lid)
-            play_url_list.append("#".join(n + "$" + self.base_url + l for n, l in eps))
-        if not play_from_list:
-            play_from_list.append(self.name)
-            play_url_list.append("")
-        return {
-            "vod_id": "",
-            "vod_name": title,
-            "vod_pic": pic,
-            "vod_year": year,
-            "vod_area": area,
-            "vod_content": content,
-            "vod_play_from": "$$$".join(play_from_list),
-            "vod_play_url": "$$$".join(play_url_list),
-        }
+            pf.append("线路" + lid)
+            pu.append("#".join(n + "$" + self.base_url + l for n, l in eps))
+        if not pf:
+            pf.append(self.name)
+            pu.append("")
+        return {"vod_id": "", "vod_name": title, "vod_pic": pic, "vod_year": year, "vod_area": area, "vod_content": content, "vod_play_from": "$$$".join(pf), "vod_play_url": "$$$".join(pu)}
 
     def _extract_m3u8(self, html):
-        player_m = re.search(r'var\s+player_aaaa\s*=\s*\{(.*?)\}', html, re.S)
-        if player_m:
+        pm = re.search(r'var\s+player_aaaa\s*=\s*\{(.*?)\}', html, re.S)
+        if pm:
             try:
-                cfg = json.loads("{" + player_m.group(1) + "}")
+                cfg = json.loads("{" + pm.group(1) + "}")
                 url = cfg.get("url", "")
                 if url:
                     return url.replace("\\/", "/")
             except Exception:
                 pass
-        m3u8s = re.findall(r'(https?://[^"\s<]+\.m3u8[^"\s<]*)', html)
-        return m3u8s[0] if m3u8s else ""
+        ms = re.findall(r'(https?://[^"\s<]+\.m3u8[^"\s<]*)', html)
+        return ms[0] if ms else ""
 
 
 def load():
