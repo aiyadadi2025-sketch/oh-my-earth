@@ -1,7 +1,12 @@
-import requests
-from bs4 import BeautifulSoup
+# coding=utf-8
+import sys
 import re
 import json
+import requests
+from bs4 import BeautifulSoup
+from base.spider import Spider
+
+sys.path.append('..')
 
 SITE_URL = "https://www.silidm.com"
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -11,52 +16,68 @@ HEADERS = {
     "Referer": SITE_URL + "/",
 }
 
+cat_map = {"dy": "电影", "juji": "电视剧", "dongman": "动漫", "zongyi": "综艺"}
+
 
 def _get(url):
     return requests.get(SITE_URL + url, headers=HEADERS, timeout=10, verify=False).text
 
 
-class py_spider:
+class Spider(Spider):
+    def getName(self):
+        return "silidm"
+
     def init(self, extend=""):
         pass
 
-    def homeContent(self, filter=False):
-        html = _get("/")
-        soup = BeautifulSoup(html, "html.parser")
+    def isVideoFormat(self, url):
+        return bool(re.search(r'\.m3u8|\.mp4|\.flv', url))
+
+    def manualVideoCheck(self):
+        return False
+
+    def homeContent(self, filter):
         classes = []
-        module_wrappers = soup.select(".module.module-wrapper")
         default_ids = ["dy", "juji", "dongman", "zongyi"]
-        for idx, m in enumerate(module_wrappers):
-            title_el = m.select_one(".module-title a span, .module-title span")
-            if not title_el:
-                continue
-            title = title_el.get_text(strip=True)
-            if not title or title == "•":
-                continue
-            tid = ""
-            type_links = m.select('a[href*="/type/"]')
-            if type_links:
-                m2 = re.search(r"/type/(\w+)\.html", type_links[0].get("href", ""))
-                if m2:
-                    tid = m2.group(1)
-            if not tid and idx < len(default_ids):
-                tid = default_ids[idx]
-            classes.append({"type_name": title, "type_id": tid})
-        if not classes:
-            classes = [
-                {"type_name": "电影", "type_id": "dy"},
-                {"type_name": "电视剧", "type_id": "juji"},
-                {"type_name": "动漫", "type_id": "dongman"},
-                {"type_name": "综艺", "type_id": "zongyi"},
-            ]
+        for idx, tid in enumerate(default_ids):
+            classes.append({"type_id": tid, "type_name": cat_map[tid]})
         return {"class": classes}
 
-    def categoryContent(self, tid, pg, filter=False, extend={}):
-        url = f"/type/{tid}.html"
-        page = int(pg)
-        if page > 1:
-            url = f"/type/{tid}-{page}.html"
-        html = _get(url)
+    def homeVideoContent(self):
+        html = _get("/")
+        soup = BeautifulSoup(html, "html.parser")
+        items = soup.select(".module-items .module-item")
+        list_data = []
+        for item in items[:20]:
+            a = item.select_one('a[href*="/video/"]')
+            if not a:
+                continue
+            vid = a.get("href", "")
+            m = re.search(r"/video/(\d+)", vid)
+            vod_id = m.group(1) if m else ""
+            title = a.get("title", "") or a.get_text(strip=True)
+            if not title:
+                continue
+            img = item.select_one(".module-item-pic img")
+            pic = img.get("data-src", "") or img.get("src", "") if img else ""
+            list_data.append({
+                "vod_id": vod_id,
+                "vod_name": title,
+                "vod_pic": pic,
+                "vod_remarks": "",
+            })
+        return {"list": list_data}
+
+    def categoryContent(self, cid, page, filter, ext):
+        base_url = "/type/%s.html" % cid
+        if ext and ext.startswith("/"):
+            base_url = ext
+        p = int(page)
+        if p > 1:
+            base_url = re.sub(r'-(\d+)\.html$', '-%d.html' % p, base_url)
+            if '-.html' in base_url:
+                base_url = base_url.replace('-.html', '-%d.html' % p)
+        html = _get(base_url)
         soup = BeautifulSoup(html, "html.parser")
         items = soup.select(".module-item")
         list_data = []
@@ -71,9 +92,7 @@ class py_spider:
             if not title:
                 continue
             img = item.select_one(".module-item-pic img")
-            pic = ""
-            if img:
-                pic = img.get("data-src", "") or img.get("src", "")
+            pic = img.get("data-src", "") or img.get("src", "") if img else ""
             desc_el = item.select_one(".module-item-caption span")
             remark = desc_el.get_text(strip=True) if desc_el else ""
             list_data.append({
@@ -82,11 +101,11 @@ class py_spider:
                 "vod_pic": pic,
                 "vod_remarks": remark,
             })
-        return {"list": list_data, "page": page, "pagecount": page + 1 if len(list_data) >= 15 else page, "limit": 15, "total": 999}
+        return {"list": list_data, "page": p, "pagecount": p + 1 if len(list_data) >= 15 else p, "limit": 15}
 
-    def detailContent(self, ids):
-        vod_id = ids[0]
-        html = _get(f"/video/{vod_id}.html")
+    def detailContent(self, did):
+        vod_id = did[0]
+        html = _get("/video/%s.html" % vod_id)
         soup = BeautifulSoup(html, "html.parser")
 
         title_el = soup.select_one(".page-title, h1")
@@ -125,9 +144,9 @@ class py_spider:
             val = item.select_one(".video-info-item")
             links = val.select("a") if val else []
             names = [a.get_text(strip=True) for a in links]
-            if "演员" in label_text or "主演" in label_text:
+            if "actor" in label_text.lower() or "star" in label_text.lower():
                 actors = names
-            elif "导演" in label_text:
+            elif "director" in label_text.lower():
                 directors = names
 
         sources = []
@@ -136,7 +155,7 @@ class py_spider:
         source_contents = soup.select(".play-source-content")
         for i, tab in enumerate(source_tabs):
             flag = tab.get_text(strip=True)
-            if not flag or flag in ("下载",):
+            if not flag or flag == "Download":
                 continue
             links = []
             if i < len(source_contents):
@@ -144,28 +163,28 @@ class py_spider:
                     ep_title = a.get_text(strip=True)
                     ep_href = a.get("href", "")
                     if ep_href and ep_href != "javascript:void(0);":
-                        links.append(f"{ep_title}${ep_href}")
+                        links.append("%s$%s" % (ep_title, ep_href))
             if links:
                 sources.append(flag)
                 episodes[flag] = "#".join(links)
 
         if not sources:
-            sources.append("播放")
+            sources.append("Play")
             eps = []
             for a in soup.select(".play-source-content a"):
                 t = a.get_text(strip=True)
                 h = a.get("href", "")
                 if h and h != "javascript:void(0);":
-                    eps.append(f"{t}${h}")
+                    eps.append("%s$%s" % (t, h))
             if eps:
-                episodes["播放"] = "#".join(eps)
+                episodes["Play"] = "#".join(eps)
             else:
                 play_a = soup.select_one('a[href*="/play/"]')
                 if play_a:
-                    episodes["播放"] = f"播放${play_a.get('href', '')}"
+                    episodes["Play"] = "Play$%s" % play_a.get('href', '')
 
         vod_play_from = "$".join(sources)
-        vod_play_url = "|".join(f"{flag}${episodes.get(flag, '')}" for flag in sources)
+        vod_play_url = "|".join("%s$%s" % (flag, episodes.get(flag, '')) for flag in sources)
 
         return {"list": [{"vod_id": vod_id, "vod_name": vod_name, "vod_pic": pic,
                           "vod_year": vod_year, "vod_area": vod_area, "vod_remarks": vod_class,
@@ -173,11 +192,11 @@ class py_spider:
                           "vod_content": vod_content,
                           "vod_play_from": vod_play_from, "vod_play_url": vod_play_url}]}
 
-    def playerContent(self, flag, id, vipFlags=""):
-        if "$" in id:
-            play_url = id.rsplit("$", 1)[-1]
+    def playerContent(self, flag, pid, vipFlags):
+        if "$" in pid:
+            play_url = pid.rsplit("$", 1)[-1]
         else:
-            play_url = id
+            play_url = pid
         html = _get(play_url if play_url.startswith("/") else "/" + play_url.lstrip("/"))
 
         m3u8 = ""
@@ -198,14 +217,14 @@ class py_spider:
         header = json.dumps({"Referer": SITE_URL + "/", "User-Agent": UA}, ensure_ascii=False)
         return {"parse": 0, "url": m3u8, "header": header}
 
-    def searchContent(self, key, quick="0", pg="1"):
-        url = f"/search/{key}-------------.html"
+    def searchContent(self, key, quick="", page='1'):
+        url = "/search/%s-------------.html" % key
         html = _get(url)
         soup = BeautifulSoup(html, "html.parser")
         items = soup.select(".module-items .video-info, .video-info")
         list_data = []
         for item in items:
-            a = item.select_one("h3 a[href*=\"/video/\"], a[href*=\"/video/\"]")
+            a = item.select_one('h3 a[href*="/video/"], a[href*="/video/"]')
             if not a:
                 continue
             vid = a.get("href", "")
@@ -224,4 +243,10 @@ class py_spider:
                 "vod_pic": pic,
                 "vod_remarks": remark,
             })
-        return {"list": list_data, "page": pg, "pagecount": 2}
+        return {"list": list_data, "page": page, "pagecount": 2}
+
+    def localProxy(self, params):
+        return [200, "application/octet-stream", "", None, None]
+
+    def destroy(self):
+        pass
