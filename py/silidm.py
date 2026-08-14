@@ -100,24 +100,29 @@ class Spider(Spider):
     def _parse_items(self, html):
         items = []
         seen = set()
-        # 简单提取所有视频链接
+        # 提取所有视频链接
         for m in re.finditer(r'/video/(\d+)\.html', html):
             link = '/video/' + m.group(1) + '.html'
             if link in seen:
                 continue
             seen.add(link)
             full_link = self.host + link
-            # 提取标题
-            title_m = re.search(r'href=["\x27]' + re.escape(link) + r'["\x27][^>]*title=["\x27]([^"\x27]+)["\x27]', html)
+            # 找到链接在 HTML 中的位置
+            idx = html.find(link)
+            if idx < 0:
+                continue
+            # 在链接附近搜索标题
+            context = html[max(0, idx-200):idx+500]
+            title_m = re.search('title=["x27]([^"x27]+)["x27]', context)
             title = title_m.group(1).strip() if title_m else ''
             # 提取图片
-            pic_m = re.search(r'data-src=["\x27](https?://[^"\x27]+)["\x27]', html)
+            pic_m = re.search('data-src=["x27](https?://[^"x27]+)["x27]', context)
             pic = pic_m.group(1) if pic_m else ''
             # 提取备注
-            remark_m = re.search(r'class="module-item-text">([^<]+)</div>', html)
+            remark_m = re.search('class="module-item-text">([^<]+)</div>', context)
             remark = remark_m.group(1).strip() if remark_m else ''
             # 提取年份和地区
-            caption_m = re.search(r'class="module-item-caption">([\s\S]*?)</div>', html)
+            caption_m = re.search('class="module-item-caption">([\s\S]*?)</div>', context)
             year, area = '', ''
             if caption_m:
                 spans = re.findall(r'<span[^>]*>([^<]*)</span>', caption_m.group(1))
