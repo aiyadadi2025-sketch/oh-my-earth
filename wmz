@@ -7,8 +7,7 @@
       "key": "蜗牛",
       "name": "🥇蜗牛｜影视",
       "type": 3,
-      "api": "./js/drpy2.min.js",      
-      "ext": "./py/蜗牛.py"
+      "api": "./py/蜗牛.py"
     },{
       "key": "爱优腾",
       "name": "🥇爱优腾芒哔｜影视",
