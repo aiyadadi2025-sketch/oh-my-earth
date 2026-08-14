@@ -4,6 +4,15 @@
       "type": 3,
       "api": "./py/抖音.py"
     },{
+      "key": "蜗牛",
+      "name": "🥇蜗牛｜影视",
+      "type": 3,
+      "api": "./py/蜗牛.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },{
       "key": "爱优腾",
       "name": "🥇爱优腾芒哔｜影视",
       "type": 3,
