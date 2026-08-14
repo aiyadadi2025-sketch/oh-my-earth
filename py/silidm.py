@@ -126,7 +126,10 @@ class Spider(Spider):
     def _parse_items(self, html):
         items = []
         seen = set()
-        pattern = r'<div class="module-item-cover">.*?</div>\s*</div>\s*</div>\s*</div>\s*</div>'
+        pattern = r'<div class="module-item-cover">[\s\S]*?<div class="module-item-titlebox">'
+        # Alternative: use a simpler approach
+        # pattern = '<div class="module-item-cover">.*?<div class="module-item-titlebox"'
+        # for m in re.finditer(pattern, html, re.S):
         for m in re.finditer(pattern, html, re.S):
             block = m.group(0)
             lm = re.search(r'href=["\x27](/video/\d+\.html)["\x27][^>]*title=["\x27]([^"\x27]+)["\x27]', block)
