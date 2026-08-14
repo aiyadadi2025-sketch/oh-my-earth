@@ -34,10 +34,10 @@ class Spider:
             classes = []
             for i, cname in enumerate(self.class_name):
                 classes.append({"type_id": self.class_url[i], "type_name": cname})
-            return {"classes": classes, "filters": {}}
+            return {"class": classes, "filters": {}}
         except Exception as e:
             print(f"[{self.name}] homeContent error: {e}")
-            return {"classes": [{"type_id": self.class_url[i], "type_name": cname} for i, cname in enumerate(self.class_name)], "filters": {}}
+            return {"class": [{"type_id": self.class_url[i], "type_name": cname} for i, cname in enumerate(self.class_name)], "filters": {}}
 
     def categoryContent(self, tid, pg, filter=False, content=None):
         try:
