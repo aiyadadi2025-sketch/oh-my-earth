@@ -323,11 +323,11 @@ class Spider(Spider):
                     play_urls.append(meta if meta and '******' not in meta else f"push://{self.host}/voddetail/{vid}/")
 
             if play_froms:
-                info["vod_play_from"] = "$$$".join(play_froms[:20])
-                info["vod_play_url"] = "$$$".join(play_urls[:20])
+                info["vod_play_from"] = "网盘资源"
+                info["vod_play_url"] = f"详情页${self.host}/voddetail/{vid}/"
             else:
                 info["vod_play_from"] = "网盘资源"
-                info["vod_play_url"] = f"请使用浏览器登录查看详情${self.host}/voddetail/{vid}/"
+                info["vod_play_url"] = f"详情页${self.host}/voddetail/{vid}/"
 
         except Exception as e:
             print(f"[{self.name}] 解析详情异常: {e}")
@@ -427,40 +427,34 @@ class Spider(Spider):
         if id.startswith('push://'):
             return {
                 'parse': 0,
-                'url': id.replace('push://', ''),
                 'playUrl': '',
+                'url': id,
                 'header': json.dumps(headers, ensure_ascii=False)
             }
 
         if id.startswith('http'):
             return {
                 'parse': 0,
-                'url': id,
                 'playUrl': '',
+                'url': f"push://{id}",
                 'header': json.dumps(headers, ensure_ascii=False)
             }
 
-        # 尝试从详情页提取实际链接
+        # 直接推送详情页URL，让用户在浏览器中登录查看网盘资源
         m = re.search(r'(\d+)', id)
         if m:
             vid = m.group(1)
-            html = self._get(f'{self.host}/voddetail/{vid}/')
-            if html:
-                pan_links = re.findall(r'pan-link-meta">([^<]+)<', html)
-                for link in pan_links:
-                    link = link.strip()
-                    if link and '******' not in link and '登录后可见' not in link:
-                        return {
-                            'parse': 0,
-                            'url': link,
-                            'playUrl': '',
-                            'header': json.dumps(headers, ensure_ascii=False)
-                        }
+            return {
+                'parse': 0,
+                'playUrl': '',
+                'url': f"push://{self.host}/voddetail/{vid}/",
+                'header': json.dumps(headers, ensure_ascii=False)
+            }
 
         return {
-            'parse': 1,
-            'url': id,
+            'parse': 0,
             'playUrl': '',
+            'url': f"push://{self.host}",
             'header': json.dumps(headers, ensure_ascii=False)
         }
 
