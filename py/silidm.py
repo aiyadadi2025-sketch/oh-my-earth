@@ -100,28 +100,30 @@ class Spider(Spider):
     def _parse_items(self, html):
         items = []
         seen = set()
-        parts = html.split('<div class="module-item">')[1:]
-        for part in parts:
-            link_m = re.search(r'href=[\"x27]([^\"x27]*?/video/\d+\.html)[\"x27]', part)
-            if not link_m:
-                continue
-            link = link_m.group(1)
+        # 简单提取所有视频链接
+        for m in re.finditer(r'/video/(\d+)\.html', html):
+            link = '/video/' + m.group(1) + '.html'
             if link in seen:
                 continue
             seen.add(link)
-            title_m = re.search(r'title=["\x27]([^"\x27]+)["\x27]', part)
+            full_link = self.host + link
+            # 提取标题
+            title_m = re.search(r'href=["\x27]' + re.escape(link) + r'["\x27][^>]*title=["\x27]([^"\x27]+)["\x27]', html)
             title = title_m.group(1).strip() if title_m else ''
-            pic_m = re.search(r'data-src=["\x27](https?://[^"\x27]+)["\x27]', part)
+            # 提取图片
+            pic_m = re.search(r'data-src=["\x27](https?://[^"\x27]+)["\x27]', html)
             pic = pic_m.group(1) if pic_m else ''
-            remark_m = re.search(r'class="module-item-text">([^<]+)</div>', part)
+            # 提取备注
+            remark_m = re.search(r'class="module-item-text">([^<]+)</div>', html)
             remark = remark_m.group(1).strip() if remark_m else ''
-            caption_m = re.search(r'class="module-item-caption">([\s\S]*?)</div>', part)
+            # 提取年份和地区
+            caption_m = re.search(r'class="module-item-caption">([\s\S]*?)</div>', html)
             year, area = '', ''
             if caption_m:
                 spans = re.findall(r'<span[^>]*>([^<]*)</span>', caption_m.group(1))
                 year = spans[0] if len(spans) > 0 and spans[0].isdigit() else ''
                 area = spans[2] if len(spans) > 2 else ''
-            items.append({'vod_id': link, 'vod_name': title, 'vod_pic': pic, 'vod_remarks': remark, 'vod_year': year, 'vod_area': area, 'vod_play_from': self.getName(), 'vod_play_url': ''})
+            items.append({'vod_id': full_link, 'vod_name': title, 'vod_pic': pic, 'vod_remarks': remark, 'vod_year': year, 'vod_area': area, 'vod_play_from': self.getName(), 'vod_play_url': ''})
         return items
 
     def _parse_detail(self, html):
@@ -139,19 +141,17 @@ class Spider(Spider):
         am = re.search(r'href="(/show/\d+---([^<]*))"', info)
         area = am.group(2).strip() if am else ''
         content = ''
-        dm = re.search(r'class="module-info-desc[^>]*>[\s\S]*?<p[^>]*>(.*?)</p>', html, re.DOTALL)
+        dm = re.search(r'class="module-info-desc[^>]*>\s*<p[^>]*>(.*?)</p>', html, re.DOTALL)
         if dm:
             content = re.sub(r'<[^>]+>', '', dm.group(1)).strip()
-        plays = re.findall(r'href=["x27]([^"x27]*?/play/\d+-(\d+)-\d+\.html)"[^>]*>(.*?)</a>', html, re.DOTALL)
+        plays = re.findall(r'href=["\x27]([^"\x27]*?/play/\d+-\d+-\d+\.html)["\x27][^>]*>(.*?)</a>', html, re.DOTALL)
         lines = {}
-        for pl, lid, pt in plays:
+        for pl, pt in plays:
             txt = re.sub(r'<[^>]+>', '', pt).strip()
             if txt:
-                lines.setdefault(lid.strip(), []).append((txt, pl))
-        if not lines:
-            plays2 = re.findall(r'href=["x27]([^"x27]*?/play/[^"\s]+)"[^>]*title="([^"]+)"', html)
-            for pl, en in plays2:
-                lines.setdefault('1', []).append((en, pl))
+                lid_m = re.search(r'/play/(\d+)-', pl)
+                lid = lid_m.group(1) if lid_m else '1'
+                lines.setdefault(lid, []).append((txt, pl))
         pf, pu = [], []
         for lid in sorted(lines.keys()):
             eps = lines[lid]
@@ -169,7 +169,7 @@ class Spider(Spider):
                 cfg = json.loads('{' + pm.group(1) + '}')
                 url = cfg.get('url', '')
                 if url:
-                    return url.replace('\.', '/')
+                    return url.replace('\\/', '/')
             except Exception:
                 pass
         ms = re.findall(r'(https?://[^"\s<]+\.m3u8[^"\s<]*)', html)
