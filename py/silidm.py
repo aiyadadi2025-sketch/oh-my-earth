@@ -1,99 +1,129 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-电影先生 (silidm.com) TVBox 爬虫脚本
-使用标准库 urllib，不依赖 requests
-"""
-import re
+# 电影先生 (silidm.com) TVBox 爬虫脚本
+# 基于 MacCMS 苹果CMS 通用结构
+# 参考：（接口源）AI开发指南 + 遮天法2.0
+
+import sys
 import json
+import re
 import urllib.parse
-import urllib.request
-import ssl
+sys.path.append("..")
+from base.spider import Spider
 
-class Spider:
-    name = "电影先生"
-    base_url = "https://silidm.com"
-    site_url = "https://silidm.com"
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    class_name = ["电影", "剧集", "动漫", "综艺"]
-    class_url = ["dy", "juji", "dongman", "zongyi"]
 
-    def fetch(self, url, headers=None):
+class Spider(Spider):
+    def init(self, extend=""):
+        self.host = "https://silidm.com"
+        self.url = self.host
+        self.ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        self.headers = {"User-Agent": self.ua, "Referer": self.host + "/"}
+
+    def getName(self):
+        return "电影先生"
+
+    def isVideoFormat(self, url):
+        return False
+
+    def manualVideoCheck(self):
+        return False
+
+    def destroy(self):
+        pass
+
+    def homeContent(self, filter):
+        result = {}
+        classes = [
+            {"type_name": "电影", "type_id": "dy"},
+            {"type_name": "剧集", "type_id": "juji"},
+            {"type_name": "动漫", "type_id": "dongman"},
+            {"type_name": "综艺", "type_id": "zongyi"},
+        ]
+        result["class"] = classes
+        result["filters"] = {}
+        return result
+
+    def categoryContent(self, tid, pg, filter, extend):
+        result = {}
         try:
-            req = urllib.request.Request(url)
-            req.add_header("User-Agent", self.ua)
-            if headers:
-                for k, v in headers.items():
-                    req.add_header(k, v)
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-            with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
-                return resp.read().decode("utf-8", errors="ignore")
-        except Exception as e:
-            print(f"[{self.name}] fetch error: {e}")
-            return ""
-
-    def homeContent(self, filter=False):
-        try:
-            classes = []
-            for i, cname in enumerate(self.class_name):
-                classes.append({"type_id": self.class_url[i], "type_name": cname})
-            return {"class": classes, "filters": {}}
-        except Exception as e:
-            print(f"[{self.name}] homeContent error: {e}")
-            return {"class": classes, "filters": {}}
-
-    def categoryContent(self, tid, pg, filter=False, content=None):
-        try:
-            url = self.base_url + "/type/" + tid + ".html"
+            url = self.host + "/type/" + tid + ".html"
             if int(pg) > 1:
                 url = url + "?page=" + str(pg)
-            html = self.fetch(url)
+            html = self.fetch(url, headers=self.headers)
             items = self._parse_items(html)
-            return {"list": items, "page": int(pg), "pagecount": 999, "limit": 20, "total": len(items)}
+            result["list"] = items
+            result["page"] = pg
+            result["pagecount"] = 999
+            result["limit"] = 20
+            result["total"] = len(items)
         except Exception as e:
-            print(f"[{self.name}] categoryContent error: {e}")
-            return {}
+            print(f"[电影先生] categoryContent error: {e}")
+        return result
 
     def detailContent(self, ids):
+        result = {}
         try:
-            url = self.base_url + ids[0]
-            html = self.fetch(url)
+            url = self.host + ids[0]
+            html = self.fetch(url, headers=self.headers)
             vod = self._parse_detail(html)
             if vod:
-                return [vod]
-            return []
+                result["list"] = [vod]
+            else:
+                result["list"] = []
         except Exception as e:
-            print(f"[{self.name}] detailContent error: {e}")
-            return []
+            print(f"[电影先生] detailContent error: {e}")
+            result["list"] = []
+        return result
 
-    def searchContent(self, key, pg, filter=False):
+    def searchContent(self, key, pg, filter, extend):
+        result = {}
         try:
             encoded = urllib.parse.quote(key)
-            url = self.base_url + "/search/" + encoded + "-------------.html"
+            url = self.host + "/search/" + encoded + "-------------.html"
             if int(pg) > 1:
                 url = url + "?page=" + str(pg)
-            html = self.fetch(url)
+            html = self.fetch(url, headers=self.headers)
             items = self._parse_items(html)
-            return {"list": items, "page": int(pg), "pagecount": 999, "limit": 20, "total": len(items)}
+            result["list"] = items
+            result["page"] = pg
+            result["pagecount"] = 999
+            result["limit"] = 20
+            result["total"] = len(items)
         except Exception as e:
-            print(f"[{self.name}] searchContent error: {e}")
-            return {}
+            print(f"[电影先生] searchContent error: {e}")
+        return result
 
-    def playerContent(self, flag, id, vipFlags=None):
+    def playerContent(self, flag, id, vipFlags):
+        result = {}
         try:
-            url = self.base_url + id
-            html = self.fetch(url)
+            url = self.host + id
+            html = self.fetch(url, headers=self.headers)
             m3u8 = self._extract_m3u8(html)
             if m3u8:
-                return {"parse": 0, "url": m3u8, "header": {"User-Agent": self.ua}}
+                result["parse"] = 0
+                result["url"] = m3u8
+                result["header"] = self.headers
+            else:
+                result["parse"] = 1
+                result["url"] = self.host + id
+                result["header"] = self.headers
         except Exception as e:
-            print(f"[{self.name}] playerContent error: {e}")
-        return {"parse": 1, "url": self.base_url + id, "header": {"User-Agent": self.ua}}
+            print(f"[电影先生] playerContent error: {e}")
+            result["parse"] = 1
+            result["url"] = self.host + id
+            result["header"] = self.headers
+        return result
 
     def _build_vod_item(self, link, title, pic, remark, year="", area=""):
-        return {"vod_id": link, "vod_name": title, "vod_pic": pic, "vod_remarks": remark, "vod_year": year, "vod_area": area, "vod_play_from": self.name, "vod_play_url": ""}
+        return {
+            "vod_id": link,
+            "vod_name": title,
+            "vod_pic": pic,
+            "vod_remarks": remark,
+            "vod_year": year,
+            "vod_area": area,
+            "vod_play_from": self.getName(),
+            "vod_play_url": "",
+        }
 
     def _parse_items(self, html):
         items = []
@@ -154,11 +184,20 @@ class Spider:
         for lid in sorted(lines.keys()):
             eps = lines[lid]
             pf.append("线路" + lid)
-            pu.append("#".join(n + "$" + self.base_url + l for n, l in eps))
+            pu.append("#".join(n + "$" + self.host + l for n, l in eps))
         if not pf:
-            pf.append(self.name)
+            pf.append(self.getName())
             pu.append("")
-        return {"vod_id": "", "vod_name": title, "vod_pic": pic, "vod_year": year, "vod_area": area, "vod_content": content, "vod_play_from": "$$$".join(pf), "vod_play_url": "$$$".join(pu)}
+        return {
+            "vod_id": "",
+            "vod_name": title,
+            "vod_pic": pic,
+            "vod_year": year,
+            "vod_area": area,
+            "vod_content": content,
+            "vod_play_from": "$$$".join(pf),
+            "vod_play_url": "$$$".join(pu),
+        }
 
     def _extract_m3u8(self, html):
         pm = re.search(r'var\s+player_aaaa\s*=\s*\{(.*?)\}', html, re.S)
@@ -172,7 +211,3 @@ class Spider:
                 pass
         ms = re.findall(r'(https?://[^"\s<]+\.m3u8[^"\s<]*)', html)
         return ms[0] if ms else ""
-
-
-def load():
-    return Spider()
