@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 电影先生 (silidm.com) TVBox 爬虫脚本
@@ -25,7 +25,7 @@ class Spider(Spider):
             classes = []
             for i, cname in enumerate(self.class_name):
                 classes.append({"type_id": self.class_url[i], "type_name": cname})
-            result = {"class": classes}
+            result = {"classes": classes, "filters": {}}
             home_list = self.categoryContent(self.class_url[0], 1)
             if home_list and "list" in home_list and home_list["list"]:
                 result["list"] = home_list["list"][:10]
