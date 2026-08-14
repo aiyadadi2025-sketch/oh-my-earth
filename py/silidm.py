@@ -102,7 +102,7 @@ class Spider(Spider):
         seen = set()
         parts = html.split('<div class="module-item">')[1:]
         for part in parts:
-            link_m = re.search(r'href=["\x27](/video/\d+\.html)["\x27]', part)
+            link_m = re.search(r'href=[\"x27]([^\"x27]*?/video/\d+\.html)[\"x27]', part)
             if not link_m:
                 continue
             link = link_m.group(1)
@@ -142,14 +142,14 @@ class Spider(Spider):
         dm = re.search(r'class="module-info-desc[^>]*>[\s\S]*?<p[^>]*>(.*?)</p>', html, re.DOTALL)
         if dm:
             content = re.sub(r'<[^>]+>', '', dm.group(1)).strip()
-        plays = re.findall(r'href="(/play/\d+-(\d+)-\d+\.html)"[^>]*>(.*?)</a>', html, re.DOTALL)
+        plays = re.findall(r'href=["x27]([^"x27]*?/play/\d+-(\d+)-\d+\.html)"[^>]*>(.*?)</a>', html, re.DOTALL)
         lines = {}
         for pl, lid, pt in plays:
             txt = re.sub(r'<[^>]+>', '', pt).strip()
             if txt:
                 lines.setdefault(lid.strip(), []).append((txt, pl))
         if not lines:
-            plays2 = re.findall(r'href="(/play/[^"\s]+)"[^>]*title="([^"]+)"', html)
+            plays2 = re.findall(r'href=["x27]([^"x27]*?/play/[^"\s]+)"[^>]*title="([^"]+)"', html)
             for pl, en in plays2:
                 lines.setdefault('1', []).append((en, pl))
         pf, pu = [], []
@@ -169,7 +169,7 @@ class Spider(Spider):
                 cfg = json.loads('{' + pm.group(1) + '}')
                 url = cfg.get('url', '')
                 if url:
-                    return url.replace('\\/', '/')
+                    return url.replace('\.', '/')
             except Exception:
                 pass
         ms = re.findall(r'(https?://[^"\s<]+\.m3u8[^"\s<]*)', html)
