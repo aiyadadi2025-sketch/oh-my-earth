@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 # 电影先生 (silidm.com) TVBox 爬虫脚本
-# 基于 MacCMS 苹果CMS 通用结构
-# 参考：（接口源）AI开发指南 + 遮天法2.0
 
 import sys
 import json
