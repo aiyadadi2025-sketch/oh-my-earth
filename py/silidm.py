@@ -32,15 +32,20 @@ class Spider(Spider):
             url = self.host + '/type/' + tid + '.html'
             if int(pg) > 1:
                 url = url + '?page=' + str(pg)
+            print(f'[电影先生] Fetching: {url}')
             html = self.fetch(url, headers=self.headers)
+            print(f'[电影先生] HTML len: {len(html) if html else 0}')
             items = self._parse_items(html)
+            print(f'[电影先生] Items: {len(items)}')
             result['list'] = items
             result['page'] = pg
             result['pagecount'] = 999
             result['limit'] = 20
             result['total'] = len(items)
         except Exception as e:
-            print(f'[电影先生] categoryContent error: {e}')
+            print(f'[电影先生] Error: {e}')
+            import traceback
+            traceback.print_exc()
         return result
 
     def detailContent(self, ids):
@@ -54,7 +59,7 @@ class Spider(Spider):
             else:
                 result['list'] = []
         except Exception as e:
-            print(f'[电影先生] detailContent error: {e}')
+            print(f'[电影先生] detail error: {e}')
             result['list'] = []
         return result
 
@@ -73,7 +78,7 @@ class Spider(Spider):
             result['limit'] = 20
             result['total'] = len(items)
         except Exception as e:
-            print(f'[电影先生] searchContent error: {e}')
+            print(f'[电影先生] search error: {e}')
         return result
 
     def playerContent(self, flag, id, vipFlags):
@@ -91,7 +96,7 @@ class Spider(Spider):
                 result['url'] = self.host + id
                 result['header'] = self.headers
         except Exception as e:
-            print(f'[电影先生] playerContent error: {e}')
+            print(f'[电影先生] player error: {e}')
             result['parse'] = 1
             result['url'] = self.host + id
             result['header'] = self.headers
@@ -100,35 +105,41 @@ class Spider(Spider):
     def _parse_items(self, html):
         items = []
         seen = set()
-        # 提取所有视频链接
+        if not html:
+            print('[电影先生] No HTML content')
+            return items
         for m in re.finditer(r'/video/(\d+)\.html', html):
             link = '/video/' + m.group(1) + '.html'
             if link in seen:
                 continue
             seen.add(link)
             full_link = self.host + link
-            # 找到链接在 HTML 中的位置
             idx = html.find(link)
             if idx < 0:
                 continue
-            # 在链接附近搜索标题
             context = html[max(0, idx-200):idx+500]
-            title_m = re.search('title=["x27]([^"x27]+)["x27]', context)
+            title_m = re.search(r'title=["\x27]([^"\x27]+)["\x27]', context)
             title = title_m.group(1).strip() if title_m else ''
-            # 提取图片
-            pic_m = re.search('data-src=["x27](https?://[^"x27]+)["x27]', context)
+            pic_m = re.search(r'data-src=["\x27](https?://[^"\x27]+)["\x27]', context)
             pic = pic_m.group(1) if pic_m else ''
-            # 提取备注
-            remark_m = re.search('class="module-item-text">([^<]+)</div>', context)
+            remark_m = re.search(r'class="module-item-text">([^<]+)</div>', context)
             remark = remark_m.group(1).strip() if remark_m else ''
-            # 提取年份和地区
-            caption_m = re.search('class="module-item-caption">([\s\S]*?)</div>', context)
+            caption_m = re.search(r'class="module-item-caption">([\s\S]*?)</div>', context)
             year, area = '', ''
             if caption_m:
                 spans = re.findall(r'<span[^>]*>([^<]*)</span>', caption_m.group(1))
                 year = spans[0] if len(spans) > 0 and spans[0].isdigit() else ''
                 area = spans[2] if len(spans) > 2 else ''
-            items.append({'vod_id': full_link, 'vod_name': title, 'vod_pic': pic, 'vod_remarks': remark, 'vod_year': year, 'vod_area': area, 'vod_play_from': self.getName(), 'vod_play_url': ''})
+            items.append({
+                'vod_id': full_link,
+                'vod_name': title,
+                'vod_pic': pic,
+                'vod_remarks': remark,
+                'vod_year': year,
+                'vod_area': area,
+                'vod_play_from': self.getName(),
+                'vod_play_url': ''
+            })
         return items
 
     def _parse_detail(self, html):
