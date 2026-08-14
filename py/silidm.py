@@ -2,41 +2,49 @@
 # -*- coding: utf-8 -*-
 """
 电影先生 (silidm.com) TVBox 爬虫脚本
-基于 MacCMS 苹果CMS 通用结构
-参考：（接口源）AI开发指南
+独立运行，不依赖 base.spider 基类
 """
-import sys
 import re
 import json
 import urllib.parse
-from base.spider import Spider
+import requests
 
-class Spider(Spider):
+class Spider:
     name = "电影先生"
     base_url = "https://silidm.com"
     site_url = "https://silidm.com"
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
     class_name = ["电影", "剧集", "动漫", "综艺"]
     class_url = ["dy", "juji", "dongman", "zongyi"]
+
+    def fetch(self, url, headers=None):
+        if headers is None:
+            headers = {}
+        headers["User-Agent"] = self.ua
+        try:
+            r = requests.get(url, headers=headers, timeout=10)
+            r.encoding = "utf-8"
+            return r.text
+        except Exception as e:
+            print(f"[{self.name}] fetch error: {e}")
+            return ""
 
     def homeContent(self, filter=False):
         try:
             classes = []
             for i, cname in enumerate(self.class_name):
                 classes.append({"type_id": self.class_url[i], "type_name": cname})
-            result = {"classes": classes, "filters": {}}
-            return result
+            return {"classes": classes, "filters": {}}
         except Exception as e:
-            self.log.error(f"[{self.name}] homeContent error: {e}")
-            return {{"classes": [{"type_id": self.class_url[i], "type_name": cname} for i, cname in enumerate(self.class_name)], "filters": {}}}
+            print(f"[{self.name}] homeContent error: {e}")
+            return {"classes": [{"type_id": self.class_url[i], "type_name": cname} for i, cname in enumerate(self.class_name)], "filters": {}}
 
     def categoryContent(self, tid, pg, filter=False, content=None):
         try:
             url = self.base_url + "/type/" + tid + ".html"
             if int(pg) > 1:
                 url = url + "?page=" + str(pg)
-            html = self.fetch(url, headers={"User-Agent": self.ua})
+            html = self.fetch(url)
             items = self._parse_items(html)
             return {
                 "list": items,
@@ -46,19 +54,19 @@ class Spider(Spider):
                 "total": len(items),
             }
         except Exception as e:
-            self.log.error(f"[{self.name}] categoryContent error: {e}")
+            print(f"[{self.name}] categoryContent error: {e}")
             return {}
 
     def detailContent(self, ids):
         try:
             url = self.base_url + ids[0]
-            html = self.fetch(url, headers={"User-Agent": self.ua})
+            html = self.fetch(url)
             vod = self._parse_detail(html)
             if vod:
                 return [vod]
             return []
         except Exception as e:
-            self.log.error(f"[{self.name}] detailContent error: {e}")
+            print(f"[{self.name}] detailContent error: {e}")
             return []
 
     def searchContent(self, key, pg, filter=False):
@@ -67,7 +75,7 @@ class Spider(Spider):
             url = self.base_url + "/search/" + encoded + "-------------.html"
             if int(pg) > 1:
                 url = url + "?page=" + str(pg)
-            html = self.fetch(url, headers={"User-Agent": self.ua})
+            html = self.fetch(url)
             items = self._parse_items(html)
             return {
                 "list": items,
@@ -77,18 +85,18 @@ class Spider(Spider):
                 "total": len(items),
             }
         except Exception as e:
-            self.log.error(f"[{self.name}] searchContent error: {e}")
+            print(f"[{self.name}] searchContent error: {e}")
             return {}
 
     def playerContent(self, flag, id, vipFlags=None):
         try:
             url = self.base_url + id
-            html = self.fetch(url, headers={"User-Agent": self.ua})
+            html = self.fetch(url)
             m3u8 = self._extract_m3u8(html)
             if m3u8:
                 return {"parse": 0, "url": m3u8, "header": {"User-Agent": self.ua}}
         except Exception as e:
-            self.log.error(f"[{self.name}] playerContent error: {e}")
+            print(f"[{self.name}] playerContent error: {e}")
         return {"parse": 1, "url": self.base_url + id, "header": {"User-Agent": self.ua}}
 
     def _build_vod_item(self, link, title, pic, remark, year="", area=""):
@@ -193,3 +201,7 @@ class Spider(Spider):
                 pass
         m3u8s = re.findall(r'(https?://[^"\s<]+\.m3u8[^"\s<]*)', html)
         return m3u8s[0] if m3u8s else ""
+
+
+def load():
+    return Spider()
