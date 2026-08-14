@@ -26,13 +26,10 @@ class Spider(Spider):
             for i, cname in enumerate(self.class_name):
                 classes.append({"type_id": self.class_url[i], "type_name": cname})
             result = {"classes": classes, "filters": {}}
-            home_list = self.categoryContent(self.class_url[0], 1)
-            if home_list and "list" in home_list and home_list["list"]:
-                result["list"] = home_list["list"][:10]
             return result
         except Exception as e:
             self.log.error(f"[{self.name}] homeContent error: {e}")
-            return {}
+            return {{"classes": [{"type_id": self.class_url[i], "type_name": cname} for i, cname in enumerate(self.class_name)], "filters": {}}}
 
     def categoryContent(self, tid, pg, filter=False, content=None):
         try:
