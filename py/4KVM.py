@@ -10,6 +10,30 @@ from base.spider import Spider
 
 class Spider(Spider):
 
+    def __init__(self):
+        super().__init__()
+        self.domains = [
+            'https://www.4kvm.tv',
+            'https://www.4kvm.net',
+            'https://www.4kvm.org',
+            'https://www.4kvms.org',
+            'https://www.4kvms.com',
+            'https://www.4kvms.top',
+        ]
+        self.host = ''
+        self._initHost()
+
+    def _initHost(self):
+        """自动检测可用域名"""
+        for domain in self.domains:
+            try:
+                resp = self.fetch(domain, headers=self.headers, timeout=5)
+                if resp.status_code == 200 and len(resp.text) > 1000:
+                    self.host = domain
+                    return
+            except:
+                continue
+
     def init(self, extend=""):
         pass
 
@@ -24,8 +48,6 @@ class Spider(Spider):
 
     def destroy(self):
         pass
-
-    host = 'https://www.4kvm.org'
 
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
@@ -280,6 +302,41 @@ class Spider(Spider):
 
     def liveContent(self, url):
         pass
+
+    def fetch(self, url, headers=None, params=None, timeout=10):
+        """带域名自动切换的fetch，失败时尝试下一个域名"""
+        if not headers:
+            headers = self.headers
+        original_host = self.host
+        # 记录哪些域名已尝试过（避免死循环）
+        tried = set()
+
+        for attempt_domain in [self.host] + [d for d in self.domains if d != self.host]:
+            if attempt_domain in tried:
+                continue
+            tried.add(attempt_domain)
+            try:
+                import urllib.parse as urlparse
+                parsed = urlparse.urlparse(url)
+                # 替换URL中的域名为当前尝试的域名
+                current_url = url
+                if parsed.netloc in [d.replace('https://', '') for d in self.domains] or not parsed.netloc:
+                    scheme = parsed.scheme or 'https'
+                    path = parsed.path or '/'
+                    query = parsed.query
+                    current_url = attempt_domain + path
+                    if query:
+                        current_url += '?' + query
+                resp = super().fetch(current_url, headers=headers, params=params, timeout=timeout)
+                if resp.status_code == 200 and len(resp.text) > 100:
+                    self.host = attempt_domain
+                    return resp
+            except Exception as e:
+                self.log(f"域名 {attempt_domain} 请求失败: {e}")
+                continue
+        # 恢复原始host
+        self.host = original_host
+        return super().fetch(url, headers=headers, params=params, timeout=timeout)
 
     def getHomeList(self, data):
         """获取首页推荐列表"""
