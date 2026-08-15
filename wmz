@@ -52,6 +52,16 @@
       "filterable": 1,
       "changeable": 1
     },
+    {
+      "key": "黄豆短剧",
+      "name": "🥇黄豆｜巴布",
+      "type": 3,
+      "api": "./py/黄豆短剧.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
 {
       "key": "茶杯狐",
       "name": "🥇茶杯狐｜影视",
