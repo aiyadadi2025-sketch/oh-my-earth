@@ -430,10 +430,10 @@ class Spider(Spider):
             play_url = unquote(play_url)
             if self._is_img_m3u8(play_url):
                 return {'url': 'https://' + PARSE_DOMAIN + '/player/?url=' + enc, 'parse': 1}
-            # 使用 localProxy 代理视频流
-            import base64
-            proxy_url = base64.b64encode(play_url.encode()).decode()
-            return {'url': 'http://127.0.0.1:13125/proxy?do=' + self.getName() + '&url=' + proxy_url}
+            # 字节流视频 URL 使用解析器
+            if 'bytetos' in play_url or 'byteimg' in play_url:
+                return {'url': 'https://' + PARSE_DOMAIN + '/player/?url=' + enc, 'parse': 1}
+            return {'url': play_url, 'parse': 1}
         except:
             return {'url': ''}
     def localProxy(self, param):
