@@ -198,17 +198,6 @@
       }
     },
     {
-      "key": "py_6v",
-      "name": "🥇6v｜影视",
-      "type": 3,
-      "api": "./py/6v.py",
-      "searchable": 1,
-      "changeable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "playerType": 2
-    },
-    {
       "key": "cat_剧迷网",
       "name": "🥇剧迷｜影视",
       "type": 3,
