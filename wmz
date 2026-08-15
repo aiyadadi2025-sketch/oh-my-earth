@@ -46,7 +46,7 @@
       "key": "歪比巴布",
       "name": "🥇歪比｜巴布",
       "type": 3,
-      "api": "./py/歪比巴卜.js",
+      "api": "./py/wbibi_歪比影视.py",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
