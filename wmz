@@ -199,9 +199,9 @@
     },
     {
       "key": "py_6v",
-      "name": "🥇四影｜影视",
+      "name": "🥇6v｜影视",
       "type": 3,
-      "api": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/py/py_4KVM.py",
+      "api": "./py/6v.py",
       "searchable": 1,
       "changeable": 1,
       "quickSearch": 1,
