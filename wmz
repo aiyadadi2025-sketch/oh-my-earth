@@ -241,6 +241,15 @@
       "filterable": 1,
       "ext": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/XYQHiker/电影港.json"
     },{
+      "key": "4K毒舌",
+      "name": "💯4K毒舌｜影视",
+      "type": 3,
+      "api": "./py/毒舌.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },{
       "key": "4KVM",
       "name": "💯4KVM｜影视",
       "type": 3,
