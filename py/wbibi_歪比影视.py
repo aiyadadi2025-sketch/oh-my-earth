@@ -12,10 +12,13 @@ try:
     from base.spider import Spider
 except ImportError:
     class Spider:
-        def fetch(self, url, headers=None, **kw):
+        def fetch(self, url, headers=None, method='GET', data=None, **kw):
             import requests as rq
             kw.pop('timeout', None)
-            r = rq.get(url, headers=headers, timeout=15, **kw)
+            if method.upper() == 'POST':
+                r = rq.post(url, headers=headers, data=data, timeout=15, **kw)
+            else:
+                r = rq.get(url, headers=headers, timeout=15, **kw)
             r.encoding = 'utf-8'
             return r
 
@@ -388,54 +391,48 @@ class Spider(Spider):
             vid = str(id)
             m = re.search(r'(\d+)-(\d+)-(\d+)', vid)
             if not m:
-                return {"url": ""}
+                return {'url': ''}
             vod_id, sid, nid = m.group(1), m.group(2), m.group(3)
-            time.sleep(2)
-            html = self._fetch_html(f"{HOST}/vplay/{vod_id}-{sid}-{nid}.html", referer=f"{HOST}/detail/{vod_id}.html")
+            # vplay 页面是 JS SPA，直接返回 403 + 重定向，无法提取数据
+            # 实际播放数据在 /index.php/vod/player/id/{id}/sid/{sid}/nid/{nid}.html
+            time.sleep(1)
+            html = self._fetch_html(f'{HOST}/index.php/vod/player/id/{vod_id}/sid/{sid}/nid/{nid}.html', referer=f'{HOST}/detail/{vod_id}.html')
             if not html:
-                time.sleep(4)
-                html = self._fetch_html(f"{HOST}/vplay/{vod_id}-{sid}-{nid}.html", referer=f"{HOST}/detail/{vod_id}.html")
+                time.sleep(2)
+                html = self._fetch_html(f'{HOST}/index.php/vod/player/id/{vod_id}/sid/{sid}/nid/{nid}.html', referer=f'{HOST}/detail/{vod_id}.html')
             if not html:
-                return {"url": ""}
-            enc = ""
-            link_next = ""
-            m2 = re.search(r'var\s+player_aaaa\s*=\s*', html)
-            if m2:
-                start = m2.end()
-                while start < len(html) and html[start] in ' \t\n\r':
-                    start += 1
-                if start < len(html) and html[start] == '{':
-                    depth = 1
-                    i = start + 1
-                    while i < len(html) and depth > 0:
+                return {'url': ''}
+            enc = ''
+            link_next = ''
+            idx = html.find('player_aaaa')
+            if idx >= 0:
+                start = html.find('{', idx)
+                if start >= 0:
+                    depth = 0
+                    for i in range(start, len(html)):
                         if html[i] == '{':
                             depth += 1
                         elif html[i] == '}':
                             depth -= 1
-                        i += 1
-                    if depth == 0:
-                        try:
-                            pj = json.loads(html[start:i])
-                            enc = pj.get("url", "")
-                            link_next = pj.get("link_next", "") or ""
-                        except:
-                            pass
-            if not enc:
-                m3 = re.search(r'"url"\s*:\s*"([^"]+)"', html)
-                if m3:
-                    enc = m3.group(1)
+                            if depth == 0:
+                                try:
+                                    pj = json.loads(html[start:i+1])
+                                    enc = pj.get('url', '')
+                                    link_next = pj.get('link_next', '') or ''
+                                except:
+                                    pass
+                                break
             if not enc or len(enc) < 50:
-                return {"url": ""}
+                return {'url': ''}
             play_url = self._decrypt(enc, link_next)
             if not play_url:
-                return {"url": ""}
+                return {'url': ''}
             play_url = unquote(play_url)
             if self._is_img_m3u8(play_url):
-                return {"url": "https://" + PARSE_DOMAIN + "/player/?url=" + enc, "parse": 1}
-            return {"url": play_url}
+                return {'url': 'https://' + PARSE_DOMAIN + '/player/?url=' + enc, 'parse': 1}
+            return {'url': play_url}
         except:
-            return {"url": ""}
-
+            return {'url': ''}
     def localProxy(self, param):
         pass
 
