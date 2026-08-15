@@ -42,6 +42,16 @@
       "filterable": 1,
       "changeable": 1
     },
+    {
+      "key": "歪比巴布",
+      "name": "🥇歪比｜巴布",
+      "type": 3,
+      "api": "./py/wbibi_歪比影视.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
 {
       "key": "茶杯狐",
       "name": "🥇茶杯狐｜影视",
