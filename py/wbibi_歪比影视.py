@@ -430,11 +430,29 @@ class Spider(Spider):
             play_url = unquote(play_url)
             if self._is_img_m3u8(play_url):
                 return {'url': 'https://' + PARSE_DOMAIN + '/player/?url=' + enc, 'parse': 1}
-            return {'url': play_url}
+            # 使用 localProxy 代理视频流
+            import base64
+            proxy_url = base64.b64encode(play_url.encode()).decode()
+            return {'url': 'http://127.0.0.1:13125/proxy?do=' + self.getName() + '&url=' + proxy_url}
         except:
             return {'url': ''}
     def localProxy(self, param):
-        pass
+        import base64
+        url = base64.b64decode(param.get("url", "")).decode("utf-8")
+        if not url:
+            return None
+        try:
+            headers = {
+                "User-Agent": UA,
+                "Referer": HOST,
+            }
+            r = self.fetch(url, headers=headers)
+            if r is None:
+                return None
+            data = r.content
+            return [200, "video/mp4", data, {"Content-Type": "video/mp4"}]
+        except:
+            return None
 
     def _pagecount(self, html, current_page=1):
         pages = re.findall(r'href="/show/\d+--------(\d+)---\.html"', html)
