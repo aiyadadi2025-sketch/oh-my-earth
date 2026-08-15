@@ -430,7 +430,13 @@ class Spider(Spider):
             play_url = unquote(play_url)
             if self._is_img_m3u8(play_url):
                 return {'url': 'https://' + PARSE_DOMAIN + '/player/?url=' + enc, 'parse': 1}
-            return {'url': play_url}
+            # 字节流视频 URL 需要添加 header 让 tvbox 正确播放
+            headers = {
+                'User-Agent': UA,
+                'Referer': HOST,
+                'Origin': 'https://' + HOST.replace('https://', '').replace('http://', ''),
+            }
+            return {'url': play_url, 'header': headers}
         except:
             return {'url': ''}
     def localProxy(self, param):
