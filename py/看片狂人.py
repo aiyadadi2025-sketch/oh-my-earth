@@ -10,9 +10,21 @@ import sys
 import json
 import base64
 import urllib.parse
-from base.spider import Spider
+import urllib.request
+import ssl
 
-sys.path.append('..')
+# TVBox 运行时提供 base.spider，本地测试时降级
+try:
+    sys.path.append('..')
+    from base.spider import Spider
+except Exception:
+    class Spider(object):
+        def init(self, extend=""): return self
+        def getName(self): return ""
+        def isVideoFormat(self, url): return False
+        def manualVideoCheck(self): return False
+        def destroy(self): return ""
+        def localProxy(self, param): return [200, "video/MP2T", {}, None]
 
 
 class Spider(Spider):
@@ -24,6 +36,11 @@ class Spider(Spider):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
         }
+        # SSL context for urllib
+        self.ctx = ssl.create_default_context()
+        self.ctx.check_hostname = False
+        self.ctx.verify_mode = ssl.CERT_NONE
+
         # 分类映射: type_id -> type_name
         self.types = {
             "1": "电影",
@@ -126,12 +143,11 @@ class Spider(Spider):
         return [200, "video/MP2T", {}, None]
 
     # ==================== HTTP 请求 ====================
-    def _fetch(self, url, headers=None):
+    def _fetch(self, url, headers=None, timeout=15):
         """发送 GET 请求，返回 HTML 字符串"""
         try:
-            import urllib.request
             req = urllib.request.Request(url, headers=headers or self.headers)
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=timeout, context=self.ctx) as resp:
                 return resp.read().decode('utf-8', errors='ignore')
         except Exception as e:
             print(f"[kpkuang] 请求失败: {url} -> {e}")
@@ -155,35 +171,14 @@ class Spider(Spider):
             result = {"class": classes}
 
             if filter:
-                # 为每个分类构建筛选器
                 filters = {}
                 for tid in self.types.keys():
                     filters[tid] = [
-                        {
-                            "key": "area",
-                            "name": "地区",
-                            "val": self.filter_areas
-                        },
-                        {
-                            "key": "year",
-                            "name": "年份",
-                            "val": self.filter_years
-                        },
-                        {
-                            "key": "state",
-                            "name": "状态",
-                            "val": self.filter_states
-                        },
-                        {
-                            "key": "letter",
-                            "name": "字母",
-                            "val": self.filter_letters
-                        },
-                        {
-                            "key": "by",
-                            "name": "排序",
-                            "val": self.filter_sorts
-                        },
+                        {"key": "area", "name": "地区", "val": self.filter_areas},
+                        {"key": "year", "name": "年份", "val": self.filter_years},
+                        {"key": "state", "name": "状态", "val": self.filter_states},
+                        {"key": "letter", "name": "字母", "val": self.filter_letters},
+                        {"key": "by", "name": "排序", "val": self.filter_sorts},
                     ]
                 result["filters"] = filters
 
@@ -198,7 +193,7 @@ class Spider(Spider):
         try:
             items = []
             page = int(pg) if pg else 1
-            limit = 30  # 每页数量
+            limit = 30
 
             # 构建筛选路径
             path_parts = []
@@ -228,7 +223,6 @@ class Spider(Spider):
                 return {"list": [], "page": page, "pagecount": page, "limit": limit, "total": 0}
 
             # 解析列表项
-            # 模式: <li class="fed-list-item ..."><div ...><a ... href="/voddetail/ID/" ...>...<img ... data-original="URL"...>...<span class="cinema_title">TITLE</span>...</div><span class="fed-list-name ...">SUB</span>...</li>
             li_pattern = r'<li[^>]*class="[^"]*fed-list-item[^"]*"[^>]*>(.*?)</li>'
             li_matches = re.findall(li_pattern, html, re.DOTALL)
 
@@ -252,7 +246,6 @@ class Spider(Spider):
                 vod_remarks = ""
                 if sub_match:
                     vod_remarks = re.sub(r'<[^>]+>', '', sub_match.group(1)).strip()
-                    # 清理 HTML 实体
                     vod_remarks = vod_remarks.replace('&nbsp;', ' ').replace('&amp;', '&')
 
                 items.append({
@@ -288,7 +281,6 @@ class Spider(Spider):
                 return {"list": []}
 
             vid = str(ids[0])
-            # 从 ID 中提取数字 ID
             id_match = re.search(r'/voddetail/(\d+)', vid)
             if not id_match:
                 return {"list": []}
@@ -306,7 +298,7 @@ class Spider(Spider):
             pic_match = re.search(r'meta itemprop="image" property="og:image" content="(https://[^"]+)"', html)
             vod_pic = pic_match.group(1) if pic_match else ""
 
-            # 年份 (from page title)
+            # 年份
             vod_year = ""
             title_match = re.search(r'《[^>]+》\((\d{4})\)', html)
             if title_match:
@@ -322,10 +314,8 @@ class Spider(Spider):
             if area_meta:
                 vod_area = area_meta.group(1)
 
-            # 导演 (JS 变量)
+            # 导演
             vod_director = ""
-            dir_match = re.search(r"vod_director\s*=\s*data\[i\]\.high\.vod_director \|\| data\[i\]\.data\.vod_director", html)
-            # 从 meta 中提取 (部分页面可能有)
             dir_meta = re.search(r'meta itemprop="director"[^>]*content="([^"]+)"', html)
             if dir_meta:
                 vod_director = dir_meta.group(1)
@@ -343,19 +333,16 @@ class Spider(Spider):
                 vod_content = desc_match.group(1)
 
             # 播放源和剧集
-            # 策略: 从详情页的 <a> 标签中直接提取 vodplay 链接，按 href 中的数字 line ID 分组
-            # 每个唯一的数字 line ID 作为一个播放源
             play_from = []
             play_url_map = {}
 
-            # 解析剧集链接: <a ... href="/vodplay/ID-LINE-EP.html" ... title="观看...">EP_NAME</a>
+            # 解析剧集链接
             ep_pattern = r'<a[^>]*href="(/vodplay/\d+-\d+-\d+\.html)"[^>]*title="([^"]+)"[^>]*>\s*([^<]+)\s*</a>'
             ep_matches = re.findall(ep_pattern, html)
             seen_eps = set()
             for ep_href, ep_title, ep_name in ep_matches:
                 parts = ep_href.replace('/vodplay/', '').replace('.html', '').split('-')
                 if len(parts) >= 3:
-                    mid = parts[0]
                     line_id = parts[1]
                     ep_num = parts[2]
                     ep_name_clean = ep_name.strip()
@@ -372,9 +359,13 @@ class Spider(Spider):
             for line_id in sorted(play_url_map.keys(), key=lambda x: int(x) if x.isdigit() else 0):
                 src = play_url_map[line_id]
                 play_from.append(src["name"])
-                src["eps"] = list(dict.fromkeys(src["eps"]))  # 去重保序
+                src["eps"] = list(dict.fromkeys(src["eps"]))
+
             vod_play_from = "$$$".join(play_from) if play_from else "主源"
-            vod_play_url = "$$$".join("#".join(play_url_map[lid]["eps"]) for lid in sorted(play_url_map.keys(), key=lambda x: int(x) if x.isdigit() else 0)) if play_from else ""
+            vod_play_url = "$$$".join(
+                "#".join(play_url_map[lid]["eps"])
+                for lid in sorted(play_url_map.keys(), key=lambda x: int(x) if x.isdigit() else 0)
+            ) if play_from else ""
 
             vod = {
                 "vod_id": vid,
@@ -398,11 +389,8 @@ class Spider(Spider):
     def playerContent(self, flag, id, vipFlags=None):
         """播放页解析: 从 iframe data-play 属性提取 Base64 URL, 拼接解析接口"""
         try:
-            # 从 id 中提取播放页路径
-            # id 格式可能是 "-vodplay/494900-3-1.html" 或完整路径
             play_match = re.search(r'/vodplay/(\d+)-(\d+)-(\d+)\.html', id)
             if not play_match:
-                # 尝试直接匹配
                 play_match = re.search(r'vodplay/(\d+-\d+-\d+)\.html', id)
                 if play_match:
                     parts = play_match.group(1).split('-')
@@ -418,18 +406,15 @@ class Spider(Spider):
             if not html:
                 return {"parse": 1, "url": "", "header": {}}
 
-            # 提取 iframe 的 data-play 属性 (Base64 编码的播放 URL)
+            # 提取 iframe 的 data-play 属性
             play_attr = re.search(r'data-play="([^"]+)"', html)
             if play_attr:
                 b64_data = play_attr.group(1)
                 try:
-                    # vfed 使用 CryptoJS Base64, 跳过前3个字符
                     stripped = b64_data[3:] if len(b64_data) > 3 else b64_data
-                    # 补齐 padding
                     padded = stripped + '=' * ((4 - len(stripped) % 4) % 4)
                     decoded = base64.b64decode(padded).decode('utf-8', errors='ignore')
                     if decoded and decoded.startswith('http'):
-                        # 使用 m3u8.tv 解析接口
                         parse_url = f"https://jx.m3u8.tv/jiexi/?url={urllib.parse.quote(decoded)}"
                         return {
                             "parse": 0,
@@ -443,7 +428,7 @@ class Spider(Spider):
                     print(f"[kpkuang] Base64 解码失败: {e}")
 
             # fallback: 尝试直接从页面提取 m3u8
-            m3u8_match = re.search(r'(https?://[^"\s]+\.m3u8[^"\s]*)', html)
+            m3u8_match = re.search(r'(https?://[^\s"\'>]+\.m3u8[^\s"\'>]*)', html)
             if m3u8_match:
                 return {
                     "parse": 0,
@@ -453,7 +438,6 @@ class Spider(Spider):
                     }
                 }
 
-            # 最终 fallback: 让 TVBox 自行解析
             return {"parse": 1, "url": "", "header": {}}
         except Exception as e:
             print(f"[kpkuang] playerContent 错误: {e}")
