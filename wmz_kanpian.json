@@ -1,0 +1,20 @@
+  {
+    "spider": "",
+    "wallpaper": "",
+    "logo": "",
+    "warningText": "",
+    "sites": [
+      {
+        "key": "kanpian",
+        "name": "看片狂人",
+        "type": 3,
+        "api": "./py/看片狂人.py",
+        "searchable": 0,
+        "quickSearch": 0,
+        "filterable": 1,
+        "changeable": 0,
+        "ext": "https://kpkuang.us"
+      }
+    ],
+    "lives": []
+  }
