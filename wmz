@@ -34,7 +34,7 @@
     },
     {
       "key": "kanpian",
-      "name": "🥇狂人｜先生",
+      "name": "🥇狂人｜影视",
       "type": 3,
       "api": "./py/看片狂人.py",
       "searchable": 1,
