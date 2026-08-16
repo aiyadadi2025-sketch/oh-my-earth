@@ -272,6 +272,15 @@
       "ext": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/XYQHiker/电影港.json"
     },
     {
+      "key": "4KIFN",
+      "name": "💯4KIFN｜影视",
+      "type": 3,
+      "api": "./py/ifn.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },{
       "key": "4K免费",
       "name": "💯4K免费｜影视",
       "type": 3,
