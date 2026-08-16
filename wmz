@@ -32,6 +32,16 @@
       "filterable": 1,
       "changeable": 1
     },
+    {
+      "key": "kanpian",
+      "name": "🥇狂人｜先生",
+      "type": 3,
+      "api": "./py/看片狂人.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
    {
       "key": "多多影视",
       "name": "🥇多多｜影视",
