@@ -447,3 +447,8 @@ class Spider(Spider):
     def searchContent(self, key, quick=False, pg="1"):
         """搜索: 返回空列表 (搜索接口被 CF 403 拦截)"""
         return {"list": [], "page": 1, "pagecount": 1, "limit": 20, "total": 0}
+
+
+    # ==================== homeVideoContent ====================
+    def homeVideoContent(self):
+        return {"list": []}
