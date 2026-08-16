@@ -53,10 +53,10 @@
       "changeable": 1
     },
     {
-      "key": "黄豆短剧",
-      "name": "🥇黄豆｜巴布",
+      "key": "奈飞工厂",
+      "name": "🥇奈飞｜影视",
       "type": 3,
-      "api": "./py/黄豆短剧.py",
+      "api": "./py/netflixgc.py",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
