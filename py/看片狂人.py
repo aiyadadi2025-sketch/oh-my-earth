@@ -14,8 +14,8 @@ import urllib.request
 import ssl
 
 # TVBox 运行时提供 base.spider，本地测试时降级
+sys.path.append('..')
 try:
-    sys.path.append('..')
     from base.spider import Spider
 except Exception:
     class Spider(object):
