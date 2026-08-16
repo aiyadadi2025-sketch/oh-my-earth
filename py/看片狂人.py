@@ -143,12 +143,18 @@ class Spider(Spider):
         return [200, "video/MP2T", {}, None]
 
     # ==================== HTTP 请求 ====================
-    def _fetch(self, url, headers=None, timeout=15):
+    def _fetch(self, url, headers=None, timeout=20):
         """发送 GET 请求，返回 HTML 字符串"""
         try:
             req = urllib.request.Request(url, headers=headers or self.headers)
             with urllib.request.urlopen(req, timeout=timeout, context=self.ctx) as resp:
                 return resp.read().decode('utf-8', errors='ignore')
+        except urllib.error.HTTPError as e:
+            print(f"[kpkuang] HTTP错误: {url} -> {e.code} {e.reason}")
+            return ""
+        except urllib.error.URLError as e:
+            print(f"[kpkuang] URL错误: {url} -> {e.reason}")
+            return ""
         except Exception as e:
             print(f"[kpkuang] 请求失败: {url} -> {e}")
             return ""
@@ -212,13 +218,17 @@ class Spider(Spider):
             if filter_path:
                 filter_path = "/" + filter_path
 
-            # 分页路径
+            # 分页路径 (格式: /vodtype/{tid}-{page}.html)
             if page > 1:
-                page_path = f"/index_{page}.html"
+                page_path = f"/vodtype/{tid}-{page}.html"
+                html = self._get(page_path)
             else:
-                page_path = ""
+                # 第一页：确保有尾部斜杠
+                base_path = f"/vodtype/{tid}/"
+                if filter_path:
+                    base_path += filter_path
+                html = self._get(base_path)
 
-            html = self._get(f"/vodtype/{tid}{filter_path}", page_path)
             if not html:
                 return {"list": [], "page": page, "pagecount": page, "limit": limit, "total": 0}
 
@@ -227,8 +237,14 @@ class Spider(Spider):
             li_matches = re.findall(li_pattern, html, re.DOTALL)
 
             for li in li_matches:
-                # 标题
+                # 标题 (兼容多种格式)
                 title_match = re.search(r'class="cinema_title">([^<]+)', li)
+                if not title_match:
+                    # 尝试 h4 标签
+                    title_match = re.search(r'<h4[^>]*>([^<]+)</h4>', li)
+                if not title_match:
+                    # 尝试普通文本
+                    title_match = re.search(r'fed-list-title[^>]*>([^<]+)', li)
                 title = title_match.group(1).strip() if title_match else ""
                 if not title:
                     continue
@@ -255,11 +271,17 @@ class Spider(Spider):
                     "vod_remarks": vod_remarks,
                 })
 
-            # 检测是否存在下一页
+            # 检测是否存在下一页 (直接尝试请求第二页)
             pagecount = page
-            next_pattern = rf'/vodtype/{tid}{filter_path}/index_{page + 1}\.html'
-            if re.search(next_pattern, html):
-                pagecount = page + 1
+            try:
+                next_url = self.site_url + f"/vodtype/{tid}-{page + 1}.html"
+                next_html = self._fetch(next_url)
+                if next_html:
+                    li_pattern = r'<li[^>]*class="[^"]*fed-list-item[^"]*"[^>]*>(.*?)</li>'
+                    if re.findall(li_pattern, next_html, re.DOTALL):
+                        pagecount = page + 1
+            except:
+                pass
 
             total = len(items)
             return {
@@ -336,35 +358,41 @@ class Spider(Spider):
             play_from = []
             play_url_map = {}
 
-            # 解析剧集链接
-            ep_pattern = r'<a[^>]*href="(/vodplay/\d+-\d+-\d+\.html)"[^>]*title="([^"]+)"[^>]*>\s*([^<]+)\s*</a>'
+            # 解析所有播放链接 (格式: vodplay/{id}-{line}-{ep}.html)
+            # title属性是描述文字如"在线观看《XXX》1080p..."，不是集数
+            ep_pattern = r'href="(/vodplay/\d+-\d+-\d+\.html)"[^>]*title="([^"]+)"'
             ep_matches = re.findall(ep_pattern, html)
+
             seen_eps = set()
-            for ep_href, ep_title, ep_name in ep_matches:
+            for ep_href, ep_title in ep_matches:
                 parts = ep_href.replace('/vodplay/', '').replace('.html', '').split('-')
                 if len(parts) >= 3:
                     line_id = parts[1]
                     ep_num = parts[2]
-                    ep_name_clean = ep_name.strip()
-                    if ep_name_clean:
-                        dedup_key = f"{line_id}_{ep_href}"
-                        if dedup_key not in seen_eps:
-                            seen_eps.add(dedup_key)
-                            if line_id not in play_url_map:
-                                play_url_map[line_id] = {"name": f"线路{line_id}", "eps": []}
-                            key = f"{ep_num}${ep_href}"
+                    dedup_key = f"{line_id}_{ep_href}"
+                    if dedup_key not in seen_eps:
+                        seen_eps.add(dedup_key)
+                        if line_id not in play_url_map:
+                            play_url_map[line_id] = {"name": f"线路{line_id}", "eps": []}
+                        key = f"{ep_num}${ep_href}"
+                        if key not in play_url_map[line_id]["eps"]:
                             play_url_map[line_id]["eps"].append(key)
 
-            # 构建播放源列表
-            for line_id in sorted(play_url_map.keys(), key=lambda x: int(x) if x.isdigit() else 0):
+            # 构建播放源列表 (按line_id数字排序)
+            sorted_line_ids = sorted(play_url_map.keys(), key=lambda x: int(x) if x.isdigit() else 999)
+
+            # 只保留有剧集的播放源
+            play_from = []
+            for line_id in sorted_line_ids:
                 src = play_url_map[line_id]
-                play_from.append(src["name"])
-                src["eps"] = list(dict.fromkeys(src["eps"]))
+                if src["eps"]:
+                    play_from.append(src["name"])
 
             vod_play_from = "$$$".join(play_from) if play_from else "主源"
             vod_play_url = "$$$".join(
                 "#".join(play_url_map[lid]["eps"])
-                for lid in sorted(play_url_map.keys(), key=lambda x: int(x) if x.isdigit() else 0)
+                for lid in sorted_line_ids
+                if play_url_map[lid]["eps"]
             ) if play_from else ""
 
             vod = {
