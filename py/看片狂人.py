@@ -15,10 +15,11 @@ import ssl
 
 # TVBox 运行时提供 base.spider，本地测试时降级
 sys.path.append('..')
+_spider_base = None
 try:
-    from base.spider import Spider
+    from base.spider import Spider as _spider_base
 except Exception:
-    class Spider(object):
+    class _spider_base(object):
         def init(self, extend=""): return self
         def getName(self): return ""
         def isVideoFormat(self, url): return False
@@ -27,7 +28,7 @@ except Exception:
         def localProxy(self, param): return [200, "video/MP2T", {}, None]
 
 
-class Spider(Spider):
+class Spider(_spider_base):
     def __init__(self):
         self.site_url = "https://kpkuang.us"
         self.headers = {
