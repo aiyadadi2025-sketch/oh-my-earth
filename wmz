@@ -36,7 +36,7 @@
       "key": "kanpian",
       "name": "🥇狂人｜影视",
       "type": 3,
-      "api": "https://raw.giteeusercontent.com/oh-my-earth/TV/raw/master/py/%E7%9C%8B%E7%89%87%E7%8B%82%E4%BA%BA.py",
+      "api": "./py/看片狂人.py",
       "searchable": 0,
       "quickSearch": 0,
       "filterable": 1,
