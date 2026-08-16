@@ -17,7 +17,6 @@ sys.path.append('..')
 
 class Spider(Spider):
     def __init__(self):
-        self_extend = ""
         self.site_url = "https://kpkuang.us"
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -303,44 +302,37 @@ class Spider(Spider):
             name_match = re.search(r'data-name="([^"]+)"', html)
             vod_name = name_match.group(1) if name_match else ""
 
-            # 海报
-            pic_match = re.search(r'meta itemprop="og:image" content="(https://[^"]+)"', html)
+            # 海报 (og:image)
+            pic_match = re.search(r'meta itemprop="image" property="og:image" content="(https://[^"]+)"', html)
             vod_pic = pic_match.group(1) if pic_match else ""
 
-            # 年份
-            year_match = re.search(r'vod_year\s*=\s*data\[i\]\.high\.vod_year \|\| data\[i\]\.data\.vod_year', html)
-            year_from_html = re.search(r'vod_year\s*=\s*([^;]+)', html)
+            # 年份 (from page title)
             vod_year = ""
-            # 尝试从页面 meta 或 title 中提取年份
             title_match = re.search(r'《[^>]+》\((\d{4})\)', html)
             if title_match:
                 vod_year = title_match.group(1)
-            # 从 JS 变量中提取
             if not vod_year:
                 yr = re.search(r"vod_year\s*=\s*'(\d{4})'", html)
                 if yr:
                     vod_year = yr.group(1)
 
-            # 地区
+            # 地区 (og:video:area)
             vod_area = ""
-            ar = re.search(r"vod_area\s*=\s*data\[i\]\.data\.vod_area", html)
-            area_text = re.search(r'vod_area\?[^)]+\|"([^"]*)"', html)
-            if area_text:
-                vod_area = area_text.group(1)
-            # 从 meta 提取
-            area_meta = re.search(r'meta itemprop="og:video:area" content="([^"]+)"', html)
+            area_meta = re.search(r'contentLocation" property="og:video:area" content="([^"]+)"', html)
             if area_meta:
                 vod_area = area_meta.group(1)
 
-            # 导演
+            # 导演 (JS 变量)
             vod_director = ""
-            dir_match = re.search(r'meta itemprop="og:video:director" content="([^"]+)"', html)
-            if dir_match:
-                vod_director = dir_match.group(1)
+            dir_match = re.search(r"vod_director\s*=\s*data\[i\]\.high\.vod_director \|\| data\[i\]\.data\.vod_director", html)
+            # 从 meta 中提取 (部分页面可能有)
+            dir_meta = re.search(r'meta itemprop="director"[^>]*content="([^"]+)"', html)
+            if dir_meta:
+                vod_director = dir_meta.group(1)
 
-            # 演员
+            # 演员 (og:video:actor)
             vod_actor = ""
-            actor_match = re.search(r'meta itemprop="og:video:actor" content="([^"]+)"', html)
+            actor_match = re.search(r'meta itemprop="actor" property="og:video:actor" content="([^"]+)"', html)
             if actor_match:
                 vod_actor = actor_match.group(1)
 
@@ -351,48 +343,38 @@ class Spider(Spider):
                 vod_content = desc_match.group(1)
 
             # 播放源和剧集
+            # 策略: 从详情页的 <a> 标签中直接提取 vodplay 链接，按 href 中的数字 line ID 分组
+            # 每个唯一的数字 line ID 作为一个播放源
             play_from = []
             play_url_map = {}
 
-            # 解析播放源: <a ... data-lineid="XXX" data-linename="YYY" ...>
-            source_pattern = r'<a[^>]*data-lineid="([^"]+)"[^>]*data-linename="([^"]+)"[^>]*>'
-            source_matches = re.findall(source_pattern, html)
-            seen_sources = set()
-            for lineid, linename in source_matches:
-                if lineid not in seen_sources and linename:
-                    play_from.append(linename)
-                    play_url_map[lineid] = []
-                    seen_sources.add(lineid)
-
             # 解析剧集链接: <a ... href="/vodplay/ID-LINE-EP.html" ... title="观看...">EP_NAME</a>
-            ep_pattern = r'<a[^>]*href="(/vodplay/\d+-\d+-\d+\.html)"[^>]*title="([^"]+)"[^>]*>([^<]+)</a>'
+            ep_pattern = r'<a[^>]*href="(/vodplay/\d+-\d+-\d+\.html)"[^>]*title="([^"]+)"[^>]*>\s*([^<]+)\s*</a>'
             ep_matches = re.findall(ep_pattern, html)
+            seen_eps = set()
             for ep_href, ep_title, ep_name in ep_matches:
-                # 从 href 提取 line_id
                 parts = ep_href.replace('/vodplay/', '').replace('.html', '').split('-')
                 if len(parts) >= 3:
                     mid = parts[0]
                     line_id = parts[1]
                     ep_num = parts[2]
-                    if line_id in play_url_map:
-                        # 使用剧集名称作为 key
-                        key = f"{ep_num}${ep_href}"
-                        play_url_map[line_id].append(key)
+                    ep_name_clean = ep_name.strip()
+                    if ep_name_clean:
+                        dedup_key = f"{line_id}_{ep_href}"
+                        if dedup_key not in seen_eps:
+                            seen_eps.add(dedup_key)
+                            if line_id not in play_url_map:
+                                play_url_map[line_id] = {"name": f"线路{line_id}", "eps": []}
+                            key = f"{ep_num}${ep_href}"
+                            play_url_map[line_id]["eps"].append(key)
 
-            # 构建 vod_play_url
-            vod_play_urls = []
-            for src_name in play_from:
-                # 找到对应的 lineid
-                idx = play_from.index(src_name)
-                lineid = list(play_url_map.keys())[idx] if idx < len(play_url_map) else ""
-                eps = play_url_map.get(lineid, [])
-                if eps:
-                    vod_play_urls.append("#".join(eps))
-                else:
-                    vod_play_urls.append("")
-
+            # 构建播放源列表
+            for line_id in sorted(play_url_map.keys(), key=lambda x: int(x) if x.isdigit() else 0):
+                src = play_url_map[line_id]
+                play_from.append(src["name"])
+                src["eps"] = list(dict.fromkeys(src["eps"]))  # 去重保序
             vod_play_from = "$$$".join(play_from) if play_from else "主源"
-            vod_play_url = "$$$".join(vod_play_urls) if vod_play_urls else ""
+            vod_play_url = "$$$".join("#".join(play_url_map[lid]["eps"]) for lid in sorted(play_url_map.keys(), key=lambda x: int(x) if x.isdigit() else 0)) if play_from else ""
 
             vod = {
                 "vod_id": vid,
