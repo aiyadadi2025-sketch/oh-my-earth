@@ -6,7 +6,7 @@
     "sites": [
       {
         "key": "kan",
-        "name": "看片狂人",
+        "name": "狂人",
         "type": 3,
         "api": "./py/看片狂人.py",
         "searchable": 0,
