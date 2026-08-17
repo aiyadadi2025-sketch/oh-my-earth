@@ -28,7 +28,8 @@
       "type": 3,
       "api": "./py/kpkuang_spider.py",
       "searchable": 1,
-      "filterable": 1      
+      "filterable": 1,
+      "ext":"https://kpkuang.one"      
     },
     {
       "key": "电影先生",
