@@ -28,15 +28,7 @@
       "type": 3,
       "api": "./py/kpkuang_spider.py",
       "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "changeable": 1,
-      "ext": {
-        "host": "https://kpkuang.one",
-        "headers": {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-      }
+      "filterable": 1      
     },
     {
       "key": "电影先生",
