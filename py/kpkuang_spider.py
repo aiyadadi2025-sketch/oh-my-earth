@@ -1,7 +1,6 @@
 # TVBox 爬虫插件 - 看片狂人 (kpkuang)
 # 目标网站: https://kpkuang.one
-# 核心特性: 完整分类、搜索、详情页解析、多线路播放
-# 特点: 使用CF保护的网站，部分接口需要特殊处理
+# 类型: HTML解析型
 
 import re
 import urllib.request
@@ -15,7 +14,7 @@ class Spider:
         self.host = 'https://kpkuang.one'
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
             'Referer': self.host + '/',
         }
@@ -28,7 +27,7 @@ class Spider:
         except:
             pass
 
-    def req(self, url, data=None, referer=None):
+    def req(self, url, data=None):
         """发起HTTP请求"""
         try:
             req = urllib.request.Request(url, headers=self.headers)
@@ -38,12 +37,13 @@ class Spider:
             content = resp.read().decode('utf-8', errors='ignore')
             return content
         except Exception as e:
-            print(f'Request error: {e}')
             return ''
 
     def homeContent(self, filter):
-        """首页内容 - 返回分类和筛选"""
-        result = {}
+        """首页内容"""
+        result = {"class": []}
+
+        # 分类数据
         classes = [
             {"type_id": "1", "type_name": "电影"},
             {"type_id": "2", "type_name": "连续剧"},
@@ -51,46 +51,52 @@ class Spider:
             {"type_id": "4", "type_name": "动漫"},
             {"type_id": "37", "type_name": "短剧"},
         ]
+        result["class"] = classes
 
+        # 筛选配置
         filters = {
             "1": [
-                {"key": "class", "name": "类型", "value": [{"n": "全部", "v": ""}, {"n": "剧情片", "v": "11"}, {"n": "动作片", "v": "6"}, {"n": "喜剧片", "v": "7"}, {"n": "爱情片", "v": "8"}, {"n": "科幻片", "v": "9"}, {"n": "恐怖片", "v": "10"}, {"n": "战争片", "v": "12"}]},
-                {"key": "year", "name": "年份", "value": [{"n": "全部", "v": ""}, {"n": "2026", "v": "2026"}, {"n": "2025", "v": "2025"}, {"n": "2024", "v": "2024"}, {"n": "2023", "v": "2023"}]},
-                {"key": "letter", "name": "字母", "value": [{"n": "全部", "v": ""}, {"n": "A", "v": "A"}, {"n": "B", "v": "B"}]},
-                {"key": "area", "name": "地区", "value": [{"n": "全部", "v": ""}, {"n": "美国", "v": "美国"}, {"n": "中国", "v": "中国大陆"}, {"n": "日本", "v": "日本"}, {"n": "韩国", "v": "韩国"}]},
+                {"key": "class", "name": "类型", "value": [
+                    {"n": "全部", "v": ""},
+                    {"n": "剧情片", "v": "11"},
+                    {"n": "动作片", "v": "6"},
+                    {"n": "喜剧片", "v": "7"},
+                    {"n": "爱情片", "v": "8"},
+                    {"n": "科幻片", "v": "9"},
+                    {"n": "恐怖片", "v": "10"},
+                ]},
             ],
             "2": [
-                {"key": "class", "name": "类型", "value": [{"n": "全部", "v": ""}, {"n": "国产剧", "v": "13"}, {"n": "港剧", "v": "14"}, {"n": "日剧", "v": "15"}, {"n": "欧美剧", "v": "16"}, {"n": "韩剧", "v": "23"}]},
-                {"key": "year", "name": "年份", "value": [{"n": "全部", "v": ""}, {"n": "2026", "v": "2026"}, {"n": "2025", "v": "2025"}]},
+                {"key": "class", "name": "类型", "value": [
+                    {"n": "全部", "v": ""},
+                    {"n": "国产剧", "v": "13"},
+                    {"n": "港剧", "v": "14"},
+                    {"n": "日剧", "v": "15"},
+                    {"n": "欧美剧", "v": "16"},
+                    {"n": "韩剧", "v": "23"},
+                ]},
             ],
-            "3": [
-                {"key": "year", "name": "年份", "value": [{"n": "全部", "v": ""}, {"n": "2026", "v": "2026"}]},
-            ],
-            "4": [
-                {"key": "year", "name": "年份", "value": [{"n": "全部", "v": ""}, {"n": "2026", "v": "2026"}]},
-            ],
-            "37": [],
         }
-
-        result["class"] = classes
         result["filters"] = filters
         return result
 
     def categoryContent(self, tid, pg, filter, extend):
-        """分类列表内容"""
-        result = {}
+        """分类列表"""
+        result = {"list": [], "page": pg, "pagecount": int(pg) + 1}
         videos = []
 
-        # 构建URL - 使用基础分类页
-        url = f'{self.host}/vodtype/{tid}/page/{pg}.html'
+        # 构建URL
+        if int(pg) > 1:
+            url = f'{self.host}/vodtype/{tid}/page/{pg}.html'
+        else:
+            url = f'{self.host}/vodtype/{tid}/'
 
         content = self.req(url)
-        if not content or len(content) < 1000:
+        if not content or len(content) < 5000:
             return result
 
-        # 提取视频链接
+        # 提取视频ID
         links = re.findall(r'href="/voddetail/(\d+)/"', content)
-        # 去重并保持顺序
         seen = set()
         unique_links = []
         for link in links:
@@ -103,7 +109,7 @@ class Spider:
         # 提取图片
         pics = re.findall(r'data-original="([^"]*)"', content)
 
-        # 配对数据
+        # 组装数据
         for i, vid in enumerate(unique_links[:20]):
             title = titles[i] if i < len(titles) else ''
             pic = pics[i] if i < len(pics) else ''
@@ -116,34 +122,32 @@ class Spider:
             })
 
         result["list"] = videos
-        result["page"] = pg
-        result["pagecount"] = int(pg) + 1
-        result["limit"] = 20
-        result["total"] = len(videos)
-        result["totalpages"] = int(pg) + 1
-
         return result
 
     def detailContent(self, vid):
-        """详情页内容"""
-        result = {}
-        video = {"vod_id": vid, "list": []}
+        """详情页"""
+        result = {"list": []}
+        video = {
+            "vod_id": vid,
+            "vod_name": "",
+            "vod_pic": "",
+            "vod_content": "",
+            "vod_actor": "",
+            "vod_play_from": "",
+            "vod_play_url": ""
+        }
 
         url = f'{self.host}/voddetail/{vid}/'
         content = self.req(url)
         if not content or len(content) < 5000:
             return result
 
-        # 提取标题 - 从title标签
+        # 提取标题
         title_match = re.search(r'<title>([^<]+)</title>', content)
         if title_match:
             title_str = title_match.group(1)
-            # 格式: "电影名 年份 线上看,在线观看..."
             parts = title_str.split('(')
-            if len(parts) > 0:
-                video["vod_name"] = parts[0].strip()
-            else:
-                video["vod_name"] = title_str
+            video["vod_name"] = parts[0].strip() if parts else title_str
 
         # 提取封面
         pic_match = re.search(r'<img[^>]*id="[^"]*"[^>]*src="([^"]*)"', content)
@@ -164,21 +168,23 @@ class Spider:
         actors = re.findall(r'<a[^>]*href="/celeb/\d+\.html"[^>]*>([^<]+)</a>', content)
         video["vod_actor"] = "、".join(actors[:5]) if actors else ""
 
-        # 提取播放链接 - 从vodplay链接
+        # 提取播放链接
         play_links = re.findall(r'href="/vodplay/(\d+)-(\d+)-(\d+)\.html"', content)
-        # 去重
-        seen_plays = set()
+
+        # 去重并按集数排序
+        seen = set()
         unique_plays = []
         for link in play_links:
             key = f"{link[0]}-{link[1]}-{link[2]}"
-            if key not in seen_plays:
-                seen_plays.add(key)
+            if key not in seen:
+                seen.add(key)
                 unique_plays.append(link)
-
-        # 按集数排序
         unique_plays.sort(key=lambda x: (int(x[1]), int(x[2])))
 
-        # 构建播放列表
+        # 提取线路名称
+        lines = re.findall(r'data-lineid="([^"]*)"[^>]*data-linename="([^"]*)"', content)
+        line_names = {l[0]: l[1] for l in lines}
+
         # 分组线路
         line_map = {}
         for play_id, ep_num, line_num in unique_plays:
@@ -186,11 +192,7 @@ class Spider:
                 line_map[line_num] = []
             line_map[line_num].append((ep_num, play_id))
 
-        # 提取线路名称
-        lines = re.findall(r'data-lineid="([^"]*)"[^>]*data-linename="([^"]*)"', content)
-        line_names = {l[0]: l[1] for l in lines}
-
-        # 构建 vod_play_from 和 vod_play_url
+        # 构建播放列表
         from_list = []
         url_list = []
 
@@ -206,38 +208,35 @@ class Spider:
 
             url_list.append("#".join(ep_urls))
 
-        video["vod_play_from"] = "$$$".join(from_list) if from_list else "默认线路"
+        video["vod_play_from"] = "$$$".join(from_list) if from_list else ""
         video["vod_play_url"] = "$$$".join(url_list) if url_list else ""
 
         result["list"] = [video]
         return result
 
     def searchContent(self, key, quick):
-        """搜索内容 - 使用首页推荐或分类页面近似搜索"""
-        result = {}
+        """搜索"""
+        result = {"list": [], "page": 1, "pagecount": 1}
         videos = []
 
-        # 由于CF保护，搜索接口可能需要特殊处理
-        # 尝试直接访问搜索页
         url = f'{self.host}/vodsearch/-------------.html?wd={urllib.parse.quote(key)}'
         content = self.req(url)
 
+        # 搜索可能受CF保护，检查内容长度
         if not content or len(content) < 2000:
-            # 如果搜索被拦截，返回空结果
-            result["list"] = videos
             return result
 
-        # 解析搜索结果
+        # 提取结果
         links = re.findall(r'href="/voddetail/(\d+)/"', content)
         titles = re.findall(r'<span[^>]*class="[^"]*cinema_title[^"]*">([^<]+)</span>', content)
         pics = re.findall(r'data-original="([^"]*)"', content)
 
         seen = set()
-        for i, vid in enumerate(links):
+        for i, vid in enumerate(links[:20]):
             if vid in seen:
                 continue
             seen.add(vid)
-            title = titles[i] if i < len(titles) else vid
+            title = titles[i] if i < len(titles) else ''
             pic = pics[i] if i < len(pics) else ''
 
             videos.append({
@@ -248,77 +247,50 @@ class Spider:
             })
 
         result["list"] = videos
-        result["page"] = 1
-        result["pagecount"] = 1
-        result["limit"] = len(videos)
-        result["total"] = len(videos)
-        result["totalpages"] = 1
-
         return result
 
     def playerContent(self, flag, id, vipFlags):
-        """播放器内容"""
-        result = {}
+        """播放器"""
+        result = {"parse": 1, "url": "", "header": {}}
 
-        # 解析播放URL格式: https://kpkuang.one/vodplay/ID-Episode-Line.html
-        # 提取参数
+        # 解析播放URL
         match = re.search(r'vodplay/(\d+)-(\d+)-(\d+)\.html', id)
         if not match:
-            result["parse"] = 1
-            result["url"] = ""
-            result["header"] = ""
             return result
 
         vid = match.group(1)
         ep = match.group(2)
         line = match.group(3)
 
-        # 构造播放页URL
+        # 获取播放页
         play_url = f'{self.host}/vodplay/{vid}-{ep}-{line}.html'
-
-        # 获取播放页内容
         content = self.req(play_url)
+
         if not content:
-            result["parse"] = 1
-            result["url"] = ""
-            result["header"] = ""
             return result
 
-        # 提取线路名称
-        line_name = ""
-        line_match = re.search(r'id="from_' + line + r'"[^>]*data-linename="([^"]*)"', content)
-        if line_match:
-            line_name = line_match.group(1)
-
-        # 提取解析接口
-        parse_urls = []
+        # 查找解析接口
         parse_matches = re.findall(r'(parse\.[^/]+\.cc/index\.php\?url=)', content)
-        for p in parse_matches:
-            if p not in parse_urls:
-                parse_urls.append(p)
+        parse_api = parse_matches[0] if parse_matches else ""
 
         # 根据线路选择解析器
-        parse_api = ""
-        if line == "qq" or line == "youku" or line == "bilibili" or line == "qiyi":
-            # VIP线路使用解析
-            if parse_urls:
-                parse_api = parse_urls[0]
+        if line in ["qq", "youku", "bilibili", "qiyi"]:
+            if parse_api:
+                result["parse"] = 0
+                result["url"] = parse_api + play_url
         elif line in ["aby", "esv"]:
-            # 超清线路
-            if len(parse_urls) > 1:
-                parse_api = parse_urls[1]
-            elif parse_urls:
-                parse_api = parse_urls[0]
-
-        # 构造最终播放URL
-        if parse_api:
-            final_url = parse_api + play_url
+            if len(parse_matches) > 1:
+                result["parse"] = 0
+                result["url"] = parse_matches[1] + play_url
+            elif parse_api:
+                result["parse"] = 0
+                result["url"] = parse_api + play_url
         else:
-            # 直接返回播放页，让播放器处理
-            final_url = play_url
+            # 其他线路尝试使用第一个解析
+            if parse_api:
+                result["parse"] = 0
+                result["url"] = parse_api + play_url
 
-        result["parse"] = 0 if parse_api else 1
-        result["url"] = final_url
         result["header"] = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Referer': self.host + '/'
@@ -326,15 +298,22 @@ class Spider:
 
         return result
 
+
 def getHomeFilter():
-    """获取首页筛选配置"""
+    """获取筛选配置"""
     return {
         "1": [
-            {"key": "class", "name": "类型", "value": [{"n": "全部", "v": ""}, {"n": "剧情", "v": "11"}, {"n": "动作", "v": "6"}, {"n": "喜剧", "v": "7"}]},
-            {"key": "year", "name": "年份", "value": [{"n": "全部", "v": ""}, {"n": "2026", "v": "2026"}]},
+            {"key": "class", "name": "类型", "value": [
+                {"n": "全部", "v": ""},
+                {"n": "剧情片", "v": "11"},
+                {"n": "动作片", "v": "6"},
+            ]}
         ],
         "2": [
-            {"key": "class", "name": "类型", "value": [{"n": "全部", "v": ""}, {"n": "国产", "v": "13"}, {"n": "韩剧", "v": "23"}]},
+            {"key": "class", "name": "类型", "value": [
+                {"n": "全部", "v": ""},
+                {"n": "国产剧", "v": "13"},
+            ]}
         ],
     }
 
@@ -355,12 +334,6 @@ def main():
             print(json.dumps(spider.playerContent(sys.argv[2], sys.argv[3], None), ensure_ascii=False, indent=2))
     else:
         print("Usage: python kpkuang_spider.py <command> [args]")
-        print("Commands:")
-        print("  home                              - 获取首页分类")
-        print("  cate <type_id> [page]             - 获取分类列表")
-        print("  detail <vid>                      - 获取详情")
-        print("  search <keyword>                  - 搜索")
-        print("  player <flag> <play_url>          - 获取播放地址")
 
 if __name__ == "__main__":
     main()
