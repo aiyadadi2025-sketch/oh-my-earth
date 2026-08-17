@@ -30,7 +30,8 @@
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
-      "changeable": 1
+      "changeable": 1,
+      "ext":"https://kpkuang.us/"
     },
     {
       "key": "kanpian",
