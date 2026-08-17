@@ -103,6 +103,18 @@
       "quickSearch": 1,
       "filterable": 1,
       "changeable": 1
+    },       
+    {
+           "key": "YunZhenXiang", 
+           "name": "🥇帧享｜影视",
+           "type": 3, 
+           "api": "csp_YunZhenXiang",
+           "searchable": 1, 
+           "quickSearch": 1, 
+           "filterable": 1,
+           "ext": { "index_url": "https://ss.trgfd.cn/cache/index/com.baiyunvideo.app.json", 
+            "key_api": "https://www.tangsan.fun/zx.php" },
+            "jar": "http://47.120.41.246:8025/vip/jar/xiaomi.php"
     },
     {
       "key": "瓜子影视",
