@@ -7,6 +7,7 @@ import urllib.request
 import urllib.parse
 import json
 import sys
+import ssl
 
 class Spider:
     def __init__(self):
@@ -18,14 +19,9 @@ class Spider:
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
             'Referer': self.host + '/',
         }
-        self.ctx = None
-        try:
-            import ssl
-            self.ctx = ssl.create_default_context()
-            self.ctx.check_hostname = False
-            self.ctx.verify_mode = ssl.CERT_NONE
-        except:
-            pass
+        self.ctx = ssl.create_default_context()
+        self.ctx.check_hostname = False
+        self.ctx.verify_mode = ssl.CERT_NONE
 
     def req(self, url, data=None):
         """发起HTTP请求"""
@@ -40,21 +36,20 @@ class Spider:
             return ''
 
     def homeContent(self, filter):
-        """首页内容"""
+        """首页内容 - 返回分类和筛选"""
         result = {"class": []}
 
-        # 分类数据
-        classes = [
+        # 硬编码分类数据（根据实际网站结构）
+        result["class"] = [
             {"type_id": "1", "type_name": "电影"},
             {"type_id": "2", "type_name": "连续剧"},
             {"type_id": "3", "type_name": "综艺"},
             {"type_id": "4", "type_name": "动漫"},
             {"type_id": "37", "type_name": "短剧"},
         ]
-        result["class"] = classes
 
         # 筛选配置
-        filters = {
+        result["filters"] = {
             "1": [
                 {"key": "class", "name": "类型", "value": [
                     {"n": "全部", "v": ""},
@@ -77,11 +72,11 @@ class Spider:
                 ]},
             ],
         }
-        result["filters"] = filters
+
         return result
 
     def categoryContent(self, tid, pg, filter, extend):
-        """分类列表"""
+        """分类列表内容"""
         result = {"list": [], "page": pg, "pagecount": int(pg) + 1}
         videos = []
 
@@ -95,8 +90,10 @@ class Spider:
         if not content or len(content) < 5000:
             return result
 
-        # 提取视频ID
+        # 提取视频链接
         links = re.findall(r'href="/voddetail/(\d+)/"', content)
+
+        # 去重并保持顺序
         seen = set()
         unique_links = []
         for link in links:
@@ -106,6 +103,7 @@ class Spider:
 
         # 提取标题
         titles = re.findall(r'<span[^>]*class="[^"]*cinema_title[^"]*">([^<]+)</span>', content)
+
         # 提取图片
         pics = re.findall(r'data-original="([^"]*)"', content)
 
@@ -125,7 +123,7 @@ class Spider:
         return result
 
     def detailContent(self, vid):
-        """详情页"""
+        """详情页内容"""
         result = {"list": []}
         video = {
             "vod_id": vid,
@@ -142,7 +140,7 @@ class Spider:
         if not content or len(content) < 5000:
             return result
 
-        # 提取标题
+        # 提取标题 - 从title标签
         title_match = re.search(r'<title>([^<]+)</title>', content)
         if title_match:
             title_str = title_match.group(1)
@@ -215,14 +213,14 @@ class Spider:
         return result
 
     def searchContent(self, key, quick):
-        """搜索"""
+        """搜索内容"""
         result = {"list": [], "page": 1, "pagecount": 1}
         videos = []
 
         url = f'{self.host}/vodsearch/-------------.html?wd={urllib.parse.quote(key)}'
         content = self.req(url)
 
-        # 搜索可能受CF保护，检查内容长度
+        # 搜索可能受CF保护，检查内容
         if not content or len(content) < 2000:
             return result
 
@@ -250,7 +248,7 @@ class Spider:
         return result
 
     def playerContent(self, flag, id, vipFlags):
-        """播放器"""
+        """播放器内容"""
         result = {"parse": 1, "url": "", "header": {}}
 
         # 解析播放URL
@@ -286,7 +284,6 @@ class Spider:
                 result["parse"] = 0
                 result["url"] = parse_api + play_url
         else:
-            # 其他线路尝试使用第一个解析
             if parse_api:
                 result["parse"] = 0
                 result["url"] = parse_api + play_url
@@ -298,24 +295,6 @@ class Spider:
 
         return result
 
-
-def getHomeFilter():
-    """获取筛选配置"""
-    return {
-        "1": [
-            {"key": "class", "name": "类型", "value": [
-                {"n": "全部", "v": ""},
-                {"n": "剧情片", "v": "11"},
-                {"n": "动作片", "v": "6"},
-            ]}
-        ],
-        "2": [
-            {"key": "class", "name": "类型", "value": [
-                {"n": "全部", "v": ""},
-                {"n": "国产剧", "v": "13"},
-            ]}
-        ],
-    }
 
 def main():
     spider = Spider()
