@@ -23,6 +23,16 @@
       "changeable": 1
     },
     {
+      "key": "看片狂人",
+      "name": "🥇狂人｜影视",
+      "type": 3,
+      "api": "./py/kpkuang_spider.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
       "key": "电影先生",
       "name": "🥇电影｜先生",
       "type": 3,
