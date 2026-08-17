@@ -30,8 +30,7 @@
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
-      "changeable": 1,
-      "ext":"https://kpkuang.us/"
+      "changeable": 1
     },
     {
       "key": "kanpian",
@@ -41,7 +40,8 @@
       "searchable": 0,
       "quickSearch": 0,
       "filterable": 1,
-      "changeable": 0
+      "changeable": 0,
+      "ext":"https://kpkuang.us/"
     },
    {
       "key": "多多影视",
