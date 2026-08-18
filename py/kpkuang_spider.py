@@ -1,6 +1,3 @@
-# TVBox 爬虫插件 - 看片狂人 (kpkuang)
-# 目标网站: https://kpkuang.one
-
 import re
 import urllib.request
 import urllib.parse
