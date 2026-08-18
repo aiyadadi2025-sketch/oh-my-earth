@@ -1,6 +1,5 @@
 # TVBox 爬虫插件 - 看片狂人 (kpkuang)
 # 目标网站: https://kpkuang.one
-# 类型: HTML解析型 + Cookie会话管理
 
 import re
 import urllib.request
@@ -15,7 +14,7 @@ class Spider:
         self.name = '看片狂人'
         self.host = 'https://kpkuang.one'
 
-        # Cookie管理器 - 保持会话
+        # Cookie管理器
         self.cookie_jar = http.cookiejar.CookieJar()
         self.cookie_processor = urllib.request.HTTPCookieProcessor(self.cookie_jar)
 
@@ -24,21 +23,17 @@ class Spider:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
             'Referer': self.host + '/',
-            'Upgrade-Insecure-Requests': '1',
         }
 
         self.ctx = ssl.create_default_context()
         self.ctx.check_hostname = False
         self.ctx.verify_mode = ssl.CERT_NONE
 
-        # 构建Opener
         self.opener = urllib.request.build_opener(self.cookie_processor)
         self.opener.addheaders = list(self.headers.items())
 
-        # 分类映射表
+        # 分类名称映射
         self.type_names = {
             '1': '电影', '2': '连续剧', '3': '综艺', '4': '动漫', '37': '短剧',
             '6': '动作片', '7': '喜剧片', '8': '爱情片', '9': '科幻片',
@@ -52,82 +47,56 @@ class Spider:
         self._init_session()
 
     def _init_session(self):
-        """初始化会话，获取Cookie"""
+        """初始化会话"""
         try:
-            # 访问首页获取初始Cookie
             req = urllib.request.Request(self.host + '/')
             resp = self.opener.open(req, timeout=10, context=self.ctx)
             resp.read()
-        except Exception as e:
-            print(f'Init session error: {e}')
+        except:
+            pass
 
-    def req(self, url, data=None, method='GET'):
-        """发起HTTP请求，自动带Cookie"""
+    def req(self, url):
+        """发起HTTP请求"""
         try:
-            if method == 'POST':
-                req = urllib.request.Request(url, data=data.encode('utf-8') if data else None, headers=self.headers)
-            else:
-                req = urllib.request.Request(url, headers=self.headers)
-
+            req = urllib.request.Request(url, headers=self.headers)
             resp = self.opener.open(req, timeout=15, context=self.ctx)
             content = resp.read().decode('utf-8', errors='ignore')
 
-            # 检查是否被CF拦截
+            # 检查是否被拦截
             if len(content) < 1000 or 'Just a moment...' in content:
-                print(f'Possible CF block, content length: {len(content)}')
-                # 尝试刷新会话
                 self._init_session()
-                # 重试一次
-                try:
-                    req = urllib.request.Request(url, headers=self.headers)
-                    resp = self.opener.open(req, timeout=15, context=self.ctx)
-                    content = resp.read().decode('utf-8', errors='ignore')
-                except:
-                    return ''
-
-            return content
-        except Exception as e:
-            print(f'Request error: {e}')
-            # 尝试重新初始化会话
-            self._init_session()
-            try:
                 req = urllib.request.Request(url, headers=self.headers)
                 resp = self.opener.open(req, timeout=15, context=self.ctx)
-                return resp.read().decode('utf-8', errors='ignore')
-            except:
-                return ''
+                content = resp.read().decode('utf-8', errors='ignore')
+
+            return content
+        except:
+            return ''
 
     def homeContent(self, filter):
-        """首页内容 - 返回分类"""
+        """首页内容"""
         result = {"class": []}
 
-        # 访问首页获取动态分类
+        # 访问首页
         content = self.req(self.host + '/')
 
-        # 尝试从首页提取分类
-        # 方法1: 导航链接
-        nav_links = re.findall(r'href="/vodtype/(\d+)/"[^>]*>([^<]*)</a>', content)
-
-        # 方法2: 简单链接（备用）
-        if not nav_links:
-            simple_links = re.findall(r'href="/vodtype/(\d+)/"', content)
-            for tid in simple_links:
-                nav_links.append((tid, self.type_names.get(tid, f'分类{tid}')))
+        # 提取分类 - 使用简化正则
+        # 匹配: href="/vodtype/1/">电影</a>
+        links = re.findall(r'href="/vodtype/(\d+)/"[^>]*>([^<]*)</a>', content)
 
         # 去重并保持顺序
         seen = set()
-        for tid, tname in nav_links:
+        for tid, tname in links:
             if tid not in seen:
                 seen.add(tid)
-                # 确保有有效的名称
-                if not tname or tname.strip() == '':
-                    tname = self.type_names.get(tid, f'分类{tid}')
+                # 清理名称
+                tname = tname.strip() if tname.strip() else self.type_names.get(tid, f'分类{tid}')
                 result["class"].append({
                     "type_id": tid,
-                    "type_name": tname.strip()
+                    "type_name": tname
                 })
 
-        # 如果没有提取到，使用硬编码的默认分类
+        # 如果没有提取到，使用默认
         if not result["class"]:
             result["class"] = [
                 {"type_id": "1", "type_name": "电影"},
@@ -139,43 +108,21 @@ class Spider:
 
         # 筛选配置
         result["filters"] = {
-            "1": [
-                {"key": "class", "name": "类型", "value": [
-                    {"n": "全部", "v": ""},
-                    {"n": "剧情片", "v": "11"},
-                    {"n": "动作片", "v": "6"},
-                    {"n": "喜剧片", "v": "7"},
-                    {"n": "爱情片", "v": "8"},
-                    {"n": "科幻片", "v": "9"},
-                    {"n": "恐怖片", "v": "10"},
-                ]},
-            ],
-            "2": [
-                {"key": "class", "name": "类型", "value": [
-                    {"n": "全部", "v": ""},
-                    {"n": "国产剧", "v": "13"},
-                    {"n": "港剧", "v": "14"},
-                    {"n": "日剧", "v": "15"},
-                    {"n": "欧美剧", "v": "16"},
-                    {"n": "韩剧", "v": "23"},
-                ]},
-            ],
+            "1": [{"key": "class", "name": "类型", "value": [
+                {"n": "全部", "v": ""},
+                {"n": "剧情片", "v": "11"},
+                {"n": "动作片", "v": "6"},
+            ]}],
         }
 
         return result
 
     def categoryContent(self, tid, pg, filter, extend):
-        """分类列表内容"""
+        """分类列表"""
         result = {"list": [], "page": pg, "pagecount": int(pg) + 1}
-        videos = []
 
         # 构建URL
-        if int(pg) > 1:
-            url = f'{self.host}/vodtype/{tid}/page/{pg}.html'
-        else:
-            url = f'{self.host}/vodtype/{tid}/'
-
-        # 获取内容
+        url = f'{self.host}/vodtype/{tid}/page/{pg}.html' if int(pg) > 1 else f'{self.host}/vodtype/{tid}/'
         content = self.req(url)
 
         if not content or len(content) < 5000:
@@ -184,7 +131,7 @@ class Spider:
         # 提取视频链接
         links = re.findall(r'href="/voddetail/(\d+)/"', content)
 
-        # 去重并保持顺序
+        # 去重
         seen = set()
         unique_links = []
         for link in links:
@@ -199,10 +146,10 @@ class Spider:
         pics = re.findall(r'data-original="([^"]*)"', content)
 
         # 组装数据
+        videos = []
         for i, vid in enumerate(unique_links[:20]):
             title = titles[i] if i < len(titles) else ''
             pic = pics[i] if i < len(pics) else ''
-
             videos.append({
                 "vod_id": vid,
                 "vod_name": title,
@@ -214,55 +161,44 @@ class Spider:
         return result
 
     def detailContent(self, vid):
-        """详情页内容"""
+        """详情页"""
         result = {"list": []}
-        video = {
-            "vod_id": vid,
-            "vod_name": "",
-            "vod_pic": "",
-            "vod_content": "",
-            "vod_actor": "",
-            "vod_play_from": "",
-            "vod_play_url": ""
-        }
+        video = {"vod_id": vid, "vod_name": "", "vod_pic": "", "vod_content": "",
+                 "vod_actor": "", "vod_play_from": "", "vod_play_url": ""}
 
-        # 获取详情页
-        url = f'{self.host}/voddetail/{vid}/'
-        content = self.req(url)
-
+        content = self.req(f'{self.host}/voddetail/{vid}/')
         if not content or len(content) < 5000:
             return result
 
-        # 提取标题 - 从title标签
+        # 标题
         title_match = re.search(r'<title>([^<]+)</title>', content)
         if title_match:
-            title_str = title_match.group(1)
-            parts = title_str.split('(')
-            video["vod_name"] = parts[0].strip() if parts else title_str
+            parts = title_match.group(1).split('(')
+            video["vod_name"] = parts[0].strip()
 
-        # 提取封面
+        # 封面
         pic_match = re.search(r'<img[^>]*id="[^"]*"[^>]*src="([^"]*)"', content)
         if pic_match:
             video["vod_pic"] = pic_match.group(1)
 
-        # 提取评分
+        # 评分
         score_match = re.search(r'豆瓣评分[^>]*>([^<]+)', content)
         if score_match:
             video["vod_score"] = score_match.group(1).strip()
 
-        # 提取简介
+        # 简介
         desc_match = re.search(r'以下是剧情简介：(.+?)影片改编', content, re.DOTALL)
         if desc_match:
             video["vod_content"] = desc_match.group(1).strip()
 
-        # 提取演员
+        # 演员
         actors = re.findall(r'<a[^>]*href="/celeb/\d+\.html"[^>]*>([^<]+)</a>', content)
         video["vod_actor"] = "、".join(actors[:5]) if actors else ""
 
-        # 提取播放链接
+        # 播放链接
         play_links = re.findall(r'href="/vodplay/(\d+)-(\d+)-(\d+)\.html"', content)
 
-        # 去重并按集数排序
+        # 去重排序
         seen = set()
         unique_plays = []
         for link in play_links:
@@ -272,11 +208,11 @@ class Spider:
                 unique_plays.append(link)
         unique_plays.sort(key=lambda x: (int(x[1]), int(x[2])))
 
-        # 提取线路名称
+        # 线路名称
         lines = re.findall(r'data-lineid="([^"]*)"[^>]*data-linename="([^"]*)"', content)
         line_names = {l[0]: l[1] for l in lines}
 
-        # 分组线路
+        # 分组
         line_map = {}
         for play_id, ep_num, line_num in unique_plays:
             if line_num not in line_map:
@@ -286,77 +222,57 @@ class Spider:
         # 构建播放列表
         from_list = []
         url_list = []
-
         for line_num, eps in line_map.items():
             line_name = line_names.get(line_num, f"线路{line_num}")
             from_list.append(line_name)
-
             ep_urls = []
             for ep_num, play_id in eps:
-                ep_name = f"第{ep_num}集"
                 play_url = f"{self.host}/vodplay/{play_id}-{ep_num}-{line_num}.html"
-                ep_urls.append(f"{ep_name}${play_url}")
-
+                ep_urls.append(f"第{ep_num}集${play_url}")
             url_list.append("#".join(ep_urls))
 
-        video["vod_play_from"] = "$$$".join(from_list) if from_list else ""
-        video["vod_play_url"] = "$$$".join(url_list) if url_list else ""
+        video["vod_play_from"] = "$$$".join(from_list)
+        video["vod_play_url"] = "$$$".join(url_list)
 
         result["list"] = [video]
         return result
 
     def searchContent(self, key, quick):
-        """搜索内容"""
+        """搜索"""
         result = {"list": [], "page": 1, "pagecount": 1}
-        videos = []
 
-        # 刷新Cookie
-        self.req(self.host + '/')
-
-        url = f'{self.host}/vodsearch/-------------.html?wd={urllib.parse.quote(key)}'
-        content = self.req(url)
-
-        # 搜索可能受CF保护
+        content = self.req(f'{self.host}/vodsearch/-------------.html?wd={urllib.parse.quote(key)}')
         if not content or len(content) < 2000:
             return result
 
-        # 提取结果
         links = re.findall(r'href="/voddetail/(\d+)/"', content)
         titles = re.findall(r'<span[^>]*class="[^"]*cinema_title[^"]*">([^<]+)</span>', content)
         pics = re.findall(r'data-original="([^"]*)"', content)
 
+        videos = []
         seen = set()
         for i, vid in enumerate(links[:20]):
-            if vid in seen:
-                continue
-            seen.add(vid)
-            title = titles[i] if i < len(titles) else ''
-            pic = pics[i] if i < len(pics) else ''
-
-            videos.append({
-                "vod_id": vid,
-                "vod_name": title,
-                "vod_pic": pic,
-                "vod_remarks": ""
-            })
+            if vid not in seen:
+                seen.add(vid)
+                videos.append({
+                    "vod_id": vid,
+                    "vod_name": titles[i] if i < len(titles) else '',
+                    "vod_pic": pics[i] if i < len(pics) else '',
+                    "vod_remarks": ""
+                })
 
         result["list"] = videos
         return result
 
     def playerContent(self, flag, id, vipFlags):
-        """播放器内容"""
+        """播放器"""
         result = {"parse": 1, "url": "", "header": {}}
 
-        # 解析播放URL
         match = re.search(r'vodplay/(\d+)-(\d+)-(\d+)\.html', id)
         if not match:
             return result
 
-        vid = match.group(1)
-        ep = match.group(2)
-        line = match.group(3)
-
-        # 获取播放页
+        vid, ep, line = match.groups()
         play_url = f'{self.host}/vodplay/{vid}-{ep}-{line}.html'
         content = self.req(play_url)
 
@@ -365,24 +281,9 @@ class Spider:
 
         # 查找解析接口
         parse_matches = re.findall(r'(parse\.[^/]+\.cc/index\.php\?url=)', content)
-        parse_api = parse_matches[0] if parse_matches else ""
-
-        # 根据线路选择解析器
-        if line in ["qq", "youku", "bilibili", "qiyi"]:
-            if parse_api:
-                result["parse"] = 0
-                result["url"] = parse_api + play_url
-        elif line in ["aby", "esv"]:
-            if len(parse_matches) > 1:
-                result["parse"] = 0
-                result["url"] = parse_matches[1] + play_url
-            elif parse_api:
-                result["parse"] = 0
-                result["url"] = parse_api + play_url
-        else:
-            if parse_api:
-                result["parse"] = 0
-                result["url"] = parse_api + play_url
+        if parse_matches:
+            result["parse"] = 0
+            result["url"] = parse_matches[0] + play_url
 
         result["header"] = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -409,7 +310,6 @@ def main():
             print(json.dumps(spider.playerContent(sys.argv[2], sys.argv[3], None), ensure_ascii=False, indent=2))
     else:
         print("Usage: python kpkuang_spider.py <command> [args]")
-        print("Commands: home, cate, detail, search, player")
 
 if __name__ == "__main__":
     main()
