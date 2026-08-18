@@ -1,6 +1,6 @@
 # TVBox 爬虫插件 - 看片狂人 (kpkuang)
 # 目标网站: https://kpkuang.one
-# 类型: HTML解析型
+# 类型: HTML解析型 + Cookie会话管理
 
 import re
 import urllib.request
@@ -8,45 +8,134 @@ import urllib.parse
 import json
 import sys
 import ssl
+import http.cookiejar
 
 class Spider:
     def __init__(self):
         self.name = '看片狂人'
         self.host = 'https://kpkuang.one'
+
+        # Cookie管理器 - 保持会话
+        self.cookie_jar = http.cookiejar.CookieJar()
+        self.cookie_processor = urllib.request.HTTPCookieProcessor(self.cookie_jar)
+
+        # 请求头
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
             'Referer': self.host + '/',
+            'Upgrade-Insecure-Requests': '1',
         }
+
         self.ctx = ssl.create_default_context()
         self.ctx.check_hostname = False
         self.ctx.verify_mode = ssl.CERT_NONE
 
-    def req(self, url, data=None):
-        """发起HTTP请求"""
+        # 构建Opener
+        self.opener = urllib.request.build_opener(self.cookie_processor)
+        self.opener.addheaders = list(self.headers.items())
+
+        # 分类映射表
+        self.type_names = {
+            '1': '电影', '2': '连续剧', '3': '综艺', '4': '动漫', '37': '短剧',
+            '6': '动作片', '7': '喜剧片', '8': '爱情片', '9': '科幻片',
+            '10': '恐怖片', '11': '剧情片', '12': '战争片',
+            '13': '国产剧', '14': '港剧', '15': '日剧', '16': '欧美剧',
+            '20': '台剧', '21': '泰剧', '22': '越南剧', '23': '韩剧',
+            '29': '纪录片', '30': '海外剧', '31': '卡通片'
+        }
+
+        # 初始化会话
+        self._init_session()
+
+    def _init_session(self):
+        """初始化会话，获取Cookie"""
         try:
-            req = urllib.request.Request(url, headers=self.headers)
-            if data:
-                req.data = data.encode('utf-8') if isinstance(data, str) else data
-            resp = urllib.request.urlopen(req, timeout=15, context=self.ctx)
+            # 访问首页获取初始Cookie
+            req = urllib.request.Request(self.host + '/')
+            resp = self.opener.open(req, timeout=10, context=self.ctx)
+            resp.read()
+        except Exception as e:
+            print(f'Init session error: {e}')
+
+    def req(self, url, data=None, method='GET'):
+        """发起HTTP请求，自动带Cookie"""
+        try:
+            if method == 'POST':
+                req = urllib.request.Request(url, data=data.encode('utf-8') if data else None, headers=self.headers)
+            else:
+                req = urllib.request.Request(url, headers=self.headers)
+
+            resp = self.opener.open(req, timeout=15, context=self.ctx)
             content = resp.read().decode('utf-8', errors='ignore')
+
+            # 检查是否被CF拦截
+            if len(content) < 1000 or 'Just a moment...' in content:
+                print(f'Possible CF block, content length: {len(content)}')
+                # 尝试刷新会话
+                self._init_session()
+                # 重试一次
+                try:
+                    req = urllib.request.Request(url, headers=self.headers)
+                    resp = self.opener.open(req, timeout=15, context=self.ctx)
+                    content = resp.read().decode('utf-8', errors='ignore')
+                except:
+                    return ''
+
             return content
         except Exception as e:
-            return ''
+            print(f'Request error: {e}')
+            # 尝试重新初始化会话
+            self._init_session()
+            try:
+                req = urllib.request.Request(url, headers=self.headers)
+                resp = self.opener.open(req, timeout=15, context=self.ctx)
+                return resp.read().decode('utf-8', errors='ignore')
+            except:
+                return ''
 
     def homeContent(self, filter):
-        """首页内容 - 返回分类和筛选"""
+        """首页内容 - 返回分类"""
         result = {"class": []}
 
-        # 硬编码分类数据（根据实际网站结构）
-        result["class"] = [
-            {"type_id": "1", "type_name": "电影"},
-            {"type_id": "2", "type_name": "连续剧"},
-            {"type_id": "3", "type_name": "综艺"},
-            {"type_id": "4", "type_name": "动漫"},
-            {"type_id": "37", "type_name": "短剧"},
-        ]
+        # 访问首页获取动态分类
+        content = self.req(self.host + '/')
+
+        # 尝试从首页提取分类
+        # 方法1: 导航链接
+        nav_links = re.findall(r'href="/vodtype/(\d+)/"[^>]*>([^<]*)</a>', content)
+
+        # 方法2: 简单链接（备用）
+        if not nav_links:
+            simple_links = re.findall(r'href="/vodtype/(\d+)/"', content)
+            for tid in simple_links:
+                nav_links.append((tid, self.type_names.get(tid, f'分类{tid}')))
+
+        # 去重并保持顺序
+        seen = set()
+        for tid, tname in nav_links:
+            if tid not in seen:
+                seen.add(tid)
+                # 确保有有效的名称
+                if not tname or tname.strip() == '':
+                    tname = self.type_names.get(tid, f'分类{tid}')
+                result["class"].append({
+                    "type_id": tid,
+                    "type_name": tname.strip()
+                })
+
+        # 如果没有提取到，使用硬编码的默认分类
+        if not result["class"]:
+            result["class"] = [
+                {"type_id": "1", "type_name": "电影"},
+                {"type_id": "2", "type_name": "连续剧"},
+                {"type_id": "3", "type_name": "综艺"},
+                {"type_id": "4", "type_name": "动漫"},
+                {"type_id": "37", "type_name": "短剧"},
+            ]
 
         # 筛选配置
         result["filters"] = {
@@ -86,7 +175,9 @@ class Spider:
         else:
             url = f'{self.host}/vodtype/{tid}/'
 
+        # 获取内容
         content = self.req(url)
+
         if not content or len(content) < 5000:
             return result
 
@@ -135,8 +226,10 @@ class Spider:
             "vod_play_url": ""
         }
 
+        # 获取详情页
         url = f'{self.host}/voddetail/{vid}/'
         content = self.req(url)
+
         if not content or len(content) < 5000:
             return result
 
@@ -217,10 +310,13 @@ class Spider:
         result = {"list": [], "page": 1, "pagecount": 1}
         videos = []
 
+        # 刷新Cookie
+        self.req(self.host + '/')
+
         url = f'{self.host}/vodsearch/-------------.html?wd={urllib.parse.quote(key)}'
         content = self.req(url)
 
-        # 搜索可能受CF保护，检查内容
+        # 搜索可能受CF保护
         if not content or len(content) < 2000:
             return result
 
@@ -313,6 +409,7 @@ def main():
             print(json.dumps(spider.playerContent(sys.argv[2], sys.argv[3], None), ensure_ascii=False, indent=2))
     else:
         print("Usage: python kpkuang_spider.py <command> [args]")
+        print("Commands: home, cate, detail, search, player")
 
 if __name__ == "__main__":
     main()
