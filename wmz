@@ -29,7 +29,10 @@
       "api": "./py/kpkuang_spider.py",
       "searchable": 1,
       "filterable": 1,
-      "ext":"https://kpkuang.one"      
+      "ext": {
+      "cookie": true,
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"  
+      }   
     },
     {
       "key": "电影先生",
