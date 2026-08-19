@@ -21,6 +21,15 @@
       "quickSearch": 1,
       "filterable": 1,
       "changeable": 1
+    },{
+      "key": "追影1",
+      "name": "🥇追影1｜影视",
+      "type": 3,
+      "api": "./py/追影.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },
     {
       "key": "电影先生",
