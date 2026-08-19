@@ -105,6 +105,16 @@
       "changeable": 1
     }, 
     {
+      "key": "枫叶",
+      "name": "🥇枫叶｜影院",
+      "type": 3,
+      "api": "./py/枫叶.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    }, 
+    {
       "key": "zhuiying",
       "name": "🥇追影｜影院",
       "type": 3,
