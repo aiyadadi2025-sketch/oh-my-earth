@@ -14,7 +14,7 @@ class Spider(Spider):
     def init(self, extend=""):
         """初始化 适配配置"""
         # 修复：删除末尾空格
-        self.host = "https://www.mtyy1.com"
+        self.host = "https://zhuiying9.cc/"
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Linux; Android 11; MI 11 Build/RKQ1.201022.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/92.0.4515.159 Mobile Safari/537.36 TVBox/1.0',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
