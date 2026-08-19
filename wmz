@@ -23,7 +23,7 @@
       "changeable": 1
     },
     {
-      "key": "看片狂人",
+      "key": "狂人",
       "name": "🥇狂人｜影视",
       "type": 3,
       "api": "./py/kpkuang_spider.py",
