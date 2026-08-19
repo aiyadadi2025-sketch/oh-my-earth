@@ -103,6 +103,16 @@
       "quickSearch": 1,
       "filterable": 1,
       "changeable": 1
+    }, 
+    {
+      "key": "麦田影院",
+      "name": "🥇麦田｜影院",
+      "type": 3,
+      "api": "./py/麦田影院.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
     },       
     {
            "key": "YunZhenXiang", 
