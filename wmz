@@ -115,6 +115,16 @@
       "changeable": 1
     }, 
     {
+      "key": "柯南",
+      "name": "🥇柯南｜影院",
+      "type": 3,
+      "api": "./py/柯南影视.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
       "key": "zhuiying",
       "name": "🥇追影｜影院",
       "type": 3,
