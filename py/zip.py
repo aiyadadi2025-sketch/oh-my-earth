@@ -53,6 +53,7 @@ class Spider(Spider):
         }
         self.default_pic = "https://pic.rmb.bdstatic.com/bjh/user/default.png"
 
+        # 分类映射（type_id -> type_name）
         self.categories = {
             "movie": "电影",
             "tv": "长剧",
@@ -70,7 +71,10 @@ class Spider(Spider):
         }
         self._hashes = {}
         self._sources = None
-        self._discovery_done = False  # 本次生命周期内是否已完成发现
+        self._discovery_done = False
+        # 本地聚合缓存：key -> (items, timestamp)
+        self._cache = {}
+        self._cache_ttl = 3600  # 缓存过期时间（秒）
 
         # 启动时加载缓存或内置 hash
         self._load_cached_hashes()
@@ -78,22 +82,18 @@ class Spider(Spider):
     # ==================== 持久化缓存 ====================
 
     def _load_cached_hashes(self):
-        """从本地文件加载缓存的 hash"""
         try:
             if os.path.exists(self.CACHE_FILE):
                 with open(self.CACHE_FILE, 'r', encoding='utf-8') as f:
                     cached = json.load(f)
                 if isinstance(cached, dict) and cached.get("catalog") and cached.get("home"):
                     self._hashes = {k: v for k, v in cached.items() if k in ("catalog", "home", "search", "detail")}
-                    # 验证缓存是否仍有效（异步延迟验证，不阻塞启动）
                     return
         except Exception:
             pass
-        # 无缓存或缓存损坏，使用内置兜底
         self._hashes = dict(self._built_in_hashes)
 
     def _save_cached_hashes(self):
-        """将发现的 hash 持久化到本地"""
         try:
             with open(self.CACHE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self._hashes, f, ensure_ascii=False, indent=2)
@@ -184,10 +184,8 @@ class Spider(Spider):
         fn_hash = self._get_hash(name)
         if not fn_hash:
             return None
-
         result = self._call_fn_raw(fn_hash, data, use_cors=True)
         if result is None or (isinstance(result, dict) and result.get("__error__")):
-            # 可能是缓存 hash 失效，触发重新发现后重试一次
             if not self._discovery_done:
                 self._discover_hashes(force=True)
                 new_hash = self._hashes.get(name)
@@ -205,45 +203,32 @@ class Spider(Spider):
     # ==================== 全量动态发现 ====================
 
     def _discover_hashes(self, force=False):
-        """从所有 JS bundle 中自动发现并识别 server function hash"""
         if self._discovery_done and not force:
             return
         self._discovery_done = True
-
         try:
-            # 1. 获取首页 HTML，提取所有 JS bundle 路径
             html = self._fetch_text(self.site_url + "/")
             if not html:
                 return
-
-            # 提取所有 .js 资源（去重，优先包含 video/functions 关键字的）
             js_paths = list(dict.fromkeys(re.findall(r"/assets/[^\"\\'>\s]+\.js", html)))
-            # 排序：把疑似视频相关的放前面
             priority = ['video', 'function', 'route', 'index']
             js_paths.sort(key=lambda p: (
                 next((i for i, k in enumerate(priority) if k in p.lower()), 99),
                 p
             ))
-
-            # 2. 从所有 bundle 中提取 hash
             all_hashes = []
             for path in js_paths:
                 bundle = self._fetch_text(self.site_url + path)
                 if not bundle:
                     continue
-                # 兼容多种 minifier 生成的变量名：_({method:`GET`}).handler(d(`HASH`)) 或 u({method:`GET`}).handler(o(`HASH`))
-                hashes = re.findall(r'\w\(\{method:`GET`\}\)\.handler\(\w\(`([0-9a-f]{64})`\)\)', bundle)
+                hashes = re.findall(r'\w\(\{method:`GET`\}\).handler\(\w\(`([0-9a-f]{64})`\)\)', bundle)
                 if hashes:
                     all_hashes.extend(hashes)
-
-            all_hashes = list(dict.fromkeys(all_hashes))  # 去重保持顺序
+            all_hashes = list(dict.fromkeys(all_hashes))
             if not all_hashes:
                 return
-
-            # 3. 智能识别各 hash 功能
-            found = {}  # name -> hash
-
-            # 3.1 探测 catalog / home（空参数即可）
+            found = {}
+            # 3.1 探测 catalog / home
             for h in all_hashes:
                 if "catalog" in found and "home" in found:
                     break
@@ -255,8 +240,7 @@ class Spider(Spider):
                     found["catalog"] = h
                 elif isinstance(data, dict) and "sections" in data:
                     found["home"] = h
-
-            # 3.2 探测 search（需要带参数）
+            # 3.2 探测 search
             if "search" not in found:
                 probe_args = {"query": "test", "source": "bfzy", "area": "all", "type": "all", "year": "all"}
                 for h in all_hashes:
@@ -270,8 +254,7 @@ class Spider(Spider):
                         if items and isinstance(items[0], dict) and "source" in items[0] and "title" in items[0]:
                             found["search"] = h
                             break
-
-            # 3.3 探测 detail（需要真实 source + id）
+            # 3.3 探测 detail
             if "detail" not in found:
                 probe_item = None
                 sh = found.get("search") or self._hashes.get("search")
@@ -296,12 +279,9 @@ class Spider(Spider):
                         if isinstance(detail, dict) and "episodes" in detail:
                             found["detail"] = h
                             break
-
-            # 4. 更新缓存
             if found:
                 self._hashes.update(found)
                 self._save_cached_hashes()
-
         except Exception:
             pass
 
@@ -314,7 +294,6 @@ class Spider(Spider):
         if isinstance(data, list) and data:
             self._sources = data
         else:
-            # 兜底默认源
             self._sources = [
                 {"source": "dyttzy", "sourceName": "线路 1"},
                 {"source": "ruyi",   "sourceName": "线路 2"},
@@ -357,14 +336,88 @@ class Spider(Spider):
             "vod_area": area,
         }
 
-    # ==================== 首页 ====================
+    # ==================== 聚合搜索（分类页/首页补充） ====================
 
-    # 热门搜索词，用于补充首页资源数量
-    _hot_keywords = [
-        "爱情", "喜剧", "动作", "科幻", "恐怖",
-        "悬疑", "动画", "纪录片", "剧情", "战争",
-        "冒险", "奇幻", "惊悚", "家庭", "历史",
-    ]
+    # 分类关键词配置：每个分类用哪些搜索词 + 优先选择的源
+    _category_keywords = {
+        "movie":  [("爱情", ["bfzy", "dyttzy", "ruyi", "ffzy"]),
+                   ("喜剧", ["bfzy", "dyttzy", "ruyi"]),
+                   ("动作", ["bfzy", "dyttzy"]),
+                   ("科幻", ["bfzy", "dyttzy"]),
+                   ("悬疑", ["bfzy"]),
+                   ("剧情", ["bfzy", "dyttzy"]),
+                   ("冒险", ["bfzy"]),
+                   ("奇幻", ["bfzy"])],
+        "tv":     [("爱情", ["bfzy", "dyttzy", "ruyi", "ffzy"]),
+                   ("喜剧", ["bfzy", "dyttzy", "ruyi"]),
+                   ("悬疑", ["bfzy", "dyttzy"]),
+                   ("剧情", ["bfzy", "dyttzy", "ruyi"]),
+                   ("冒险", ["bfzy"]),
+                   ("科幻", ["bfzy"])],
+        "short":  [("爱情", ["bfzy", "dyttzy"]),
+                   ("喜剧", ["bfzy", "dyttzy"]),
+                   ("剧情", ["bfzy"]),
+                   ("悬疑", ["bfzy"])],
+        "variety":[("喜剧", ["bfzy", "dyttzy", "ruyi"]),
+                   ("爱情", ["bfzy"]),
+                   ("综艺", ["bfzy"])],
+        "anime":  [("动画", ["bfzy", "dyttzy", "ruyi"]),
+                   ("科幻", ["bfzy"]),
+                   ("冒险", ["bfzy"]),
+                   ("喜剧", ["bfzy"])],
+    }
+
+    def _aggregate_by_category(self, tid, limit=60):
+        """根据分类聚合搜索，返回去重后的视频列表"""
+        items_config = self._category_keywords.get(tid, [])
+        if not items_config:
+            return []
+
+        videos = []
+        seen = set()
+        sources = self.get_sources()
+        source_codes = [s.get("source") for s in sources if s.get("source")]
+
+        try:
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                futures = {}
+                for kw, pri_sources in items_config:
+                    # 优先用配置中的源，不足的补全
+                    used_sources = list(pri_sources)
+                    for sc in source_codes:
+                        if sc not in used_sources:
+                            used_sources.append(sc)
+                    for sc in used_sources:
+                        if len(videos) >= limit:
+                            break
+                        futures[pool.submit(
+                            self._call_fn, "search",
+                            {"query": kw, "source": sc, "area": "all", "type": "all", "year": "all"}
+                        )] = (kw, sc)
+
+                for fut in as_completed(futures, timeout=45):
+                    if len(videos) >= limit:
+                        break
+                    try:
+                        data = fut.result(timeout=8)
+                    except Exception:
+                        continue
+                    if not isinstance(data, dict):
+                        continue
+                    for item in (data.get("items") or []):
+                        if not isinstance(item, dict):
+                            continue
+                        vod = self._item_to_vod(item)
+                        if vod and vod["vod_id"] not in seen:
+                            seen.add(vod["vod_id"])
+                            videos.append(vod)
+                        if len(videos) >= limit:
+                            break
+        except Exception:
+            pass
+        return videos
+
+    # ==================== 首页 ====================
 
     def _home_sections(self):
         data = self._call_fn("home", {})
@@ -372,15 +425,11 @@ class Spider(Spider):
             return data.get("sections", {}) or {}
         return {}
 
-    def _merge_videos(self, items, seen, limit=60):
-        """将一批搜索/分类结果合并到已有列表中，去重并限制总数"""
-        return None  # 内联使用，保留接口占位
-
     def homeContent(self, filter):
         categories = [{"type_id": k, "type_name": v} for k, v in self.categories.items()]
         sections = self._home_sections()
 
-        # 从首页 sections 收集初始视频
+        # 从首页 sections 收集视频
         videos = []
         seen = set()
         for cat, items in sections.items():
@@ -392,40 +441,30 @@ class Spider(Spider):
                     seen.add(vod["vod_id"])
                     videos.append(vod)
 
-        # 通过热门搜索补充更多资源（每个关键词最多取10条）
+        # 用各分类搜索补充到60条
         if len(videos) < 60:
-            search_h = self._get_hash("search")
-            if search_h:
-                try:
-                    with ThreadPoolExecutor(max_workers=5) as pool:
-                        futures = {}
-                        for kw in self._hot_keywords:
-                            futures[pool.submit(
-                                self._call_fn, "search",
-                                {"query": kw, "source": "bfzy", "area": "all", "type": "all", "year": "all"}
-                            )] = kw
-                        for fut in as_completed(futures, timeout=25):
-                            if len(videos) >= 60:
-                                break
-                            try:
-                                data = fut.result(timeout=8)
-                            except Exception:
-                                continue
-                            if not isinstance(data, dict):
-                                continue
-                            for item in (data.get("items") or []):
-                                if not isinstance(item, dict):
-                                    continue
-                                vod = self._item_to_vod(item)
-                                if vod and vod["vod_id"] not in seen:
+            try:
+                with ThreadPoolExecutor(max_workers=5) as pool:
+                    futures = {}
+                    for cat_id in self.categories:
+                        if len(videos) >= 60:
+                            break
+                        futures[pool.submit(self._aggregate_by_category, cat_id, 60 - len(videos))] = cat_id
+                    for fut in as_completed(futures, timeout=40):
+                        if len(videos) >= 60:
+                            break
+                        extra = fut.result(timeout=8)
+                        if isinstance(extra, list):
+                            for vod in extra:
+                                if vod["vod_id"] not in seen:
                                     seen.add(vod["vod_id"])
                                     videos.append(vod)
                                 if len(videos) >= 60:
                                     break
-                except Exception:
-                    pass
+            except Exception:
+                pass
 
-        return {"class": categories, "list": videos[:60], "filters": {}}
+        return {"class": categories, "list": videos[:60], "filters": self._build_filters()}
 
     def homeVideoContent(self):
         sections = self._home_sections()
@@ -441,24 +480,115 @@ class Spider(Spider):
                     videos.append(vod)
         return {"list": videos[:30]}
 
-    # ==================== 分类 ====================
+    # ==================== 筛选器 ====================
 
-    # 分类到关键词的映射，用于聚合更多资源
-    _category_keywords = {
-        "movie": ["爱情", "喜剧", "动作", "科幻", "悬疑", "剧情", "冒险", "奇幻"],
-        "tv": ["爱情", "喜剧", "悬疑", "剧情", "冒险", "科幻"],
-        "short": ["爱情", "喜剧", "剧情", "悬疑"],
-        "variety": ["喜剧", "爱情", "综艺"],
-        "anime": ["动画", "科幻", "冒险", "喜剧"],
-    }
+    def _build_filters(self):
+        """构建筛选器配置"""
+        return {
+            "movie": [
+                {"key": "area", "name": "地区", "value": [
+                    {"n": "全部", "v": "all"},
+                    {"n": "内地", "v": "内地"},
+                    {"n": "香港", "v": "香港"},
+                    {"n": "台湾", "v": "台湾"},
+                    {"n": "美国", "v": "美国"},
+                    {"n": "日本", "v": "日本"},
+                    {"n": "韩国", "v": "韩国"},
+                    {"n": "印度", "v": "印度"},
+                    {"n": "欧洲", "v": "欧洲"},
+                ]},
+                {"key": "year", "name": "年份", "value": [
+                    {"n": "全部", "v": "all"},
+                    {"n": "2025", "v": "2025"},
+                    {"n": "2024", "v": "2024"},
+                    {"n": "2023", "v": "2023"},
+                    {"n": "2022", "v": "2022"},
+                    {"n": "2021", "v": "2021"},
+                    {"n": "2020", "v": "2020"},
+                    {"n": "2019", "v": "2019"},
+                    {"n": "2018", "v": "2018"},
+                    {"n": "经典", "v": "classic"},
+                ]},
+                {"key": "letter", "name": "字母", "value": [
+                    {"n": "全部", "v": "all"},
+                    {"n": "A", "v": "A"}, {"n": "B", "v": "B"}, {"n": "C", "v": "C"},
+                    {"n": "D", "v": "D"}, {"n": "E", "v": "E"}, {"n": "F", "v": "F"},
+                    {"n": "G", "v": "G"}, {"n": "H", "v": "H"}, {"n": "I", "v": "I"},
+                    {"n": "J", "v": "J"}, {"n": "K", "v": "K"}, {"n": "L", "v": "L"},
+                    {"n": "M", "v": "M"}, {"n": "N", "v": "N"}, {"n": "O", "v": "O"},
+                    {"n": "P", "v": "P"}, {"n": "Q", "v": "Q"}, {"n": "R", "v": "R"},
+                    {"n": "S", "v": "S"}, {"n": "T", "v": "T"}, {"n": "U", "v": "U"},
+                    {"n": "V", "v": "V"}, {"n": "W", "v": "W"}, {"n": "X", "v": "X"},
+                    {"n": "Y", "v": "Y"}, {"n": "Z", "v": "Z"},
+                ]},
+            ],
+            "tv": [
+                {"key": "area", "name": "地区", "value": [
+                    {"n": "全部", "v": "all"},
+                    {"n": "内地", "v": "内地"},
+                    {"n": "香港", "v": "香港"},
+                    {"n": "台湾", "v": "台湾"},
+                    {"n": "美国", "v": "美国"},
+                    {"n": "日本", "v": "日本"},
+                    {"n": "韩国", "v": "韩国"},
+                    {"n": "印度", "v": "印度"},
+                ]},
+                {"key": "year", "name": "年份", "value": [
+                    {"n": "全部", "v": "all"},
+                    {"n": "2025", "v": "2025"},
+                    {"n": "2024", "v": "2024"},
+                    {"n": "2023", "v": "2023"},
+                    {"n": "2022", "v": "2022"},
+                    {"n": "2021", "v": "2021"},
+                    {"n": "2020", "v": "2020"},
+                    {"n": "经典", "v": "classic"},
+                ]},
+            ],
+            "short": [
+                {"key": "year", "name": "年份", "value": [
+                    {"n": "全部", "v": "all"},
+                    {"n": "2025", "v": "2025"},
+                    {"n": "2024", "v": "2024"},
+                    {"n": "2023", "v": "2023"},
+                    {"n": "2022", "v": "2022"},
+                    {"n": "经典", "v": "classic"},
+                ]},
+            ],
+            "variety": [
+                {"key": "year", "name": "年份", "value": [
+                    {"n": "全部", "v": "all"},
+                    {"n": "2025", "v": "2025"},
+                    {"n": "2024", "v": "2024"},
+                    {"n": "2023", "v": "2023"},
+                    {"n": "经典", "v": "classic"},
+                ]},
+            ],
+            "anime": [
+                {"key": "area", "name": "地区", "value": [
+                    {"n": "全部", "v": "all"},
+                    {"n": "日本", "v": "日本"},
+                    {"n": "美国", "v": "美国"},
+                    {"n": "内地", "v": "内地"},
+                ]},
+                {"key": "year", "name": "年份", "value": [
+                    {"n": "全部", "v": "all"},
+                    {"n": "2025", "v": "2025"},
+                    {"n": "2024", "v": "2024"},
+                    {"n": "2023", "v": "2023"},
+                    {"n": "经典", "v": "classic"},
+                ]},
+            ],
+        }
+
+    # ==================== 分类 ====================
 
     def categoryContent(self, tid, pg, filter, extend):
         page = int(pg) if pg else 1
-        limit = 60
+        limit = 30
         videos = []
         seen = set()
 
-        # 1. 先从首页 sections 取该分类的固定内容
+        # 1. 从首页 sections 取该分类的固定内容
         sections = self._home_sections()
         items = sections.get(tid, []) if isinstance(sections, dict) else []
         if isinstance(items, list):
@@ -468,49 +598,45 @@ class Spider(Spider):
                     seen.add(vod["vod_id"])
                     videos.append(vod)
 
-        # 2. 通过关键词+多源搜索补充同类型资源
-        keywords = self._category_keywords.get(tid, [])
-        if keywords:
-            sources = self.get_sources()
-            source_codes = [s.get("source") for s in sources if s.get("source")]
-            try:
-                with ThreadPoolExecutor(max_workers=5) as pool:
-                    futures = {}
-                    for kw in keywords:
-                        for sc in source_codes:
-                            if len(videos) >= limit:
-                                break
-                            futures[pool.submit(
-                                self._call_fn, "search",
-                                {"query": kw, "source": sc, "area": "all", "type": "all", "year": "all"}
-                            )] = (kw, sc)
-                    for fut in as_completed(futures, timeout=30):
-                        if len(videos) >= limit:
-                            break
-                        try:
-                            data = fut.result(timeout=8)
-                        except Exception:
-                            continue
-                        if not isinstance(data, dict):
-                            continue
-                        for item in (data.get("items") or []):
-                            if not isinstance(item, dict):
-                                continue
-                            vod = self._item_to_vod(item)
-                            if vod and vod["vod_id"] not in seen:
-                                seen.add(vod["vod_id"])
-                                videos.append(vod)
-                            if len(videos) >= limit:
-                                break
-            except Exception:
-                pass
+        # 2. 通过关键词+多源搜索补充更多资源
+        extra_videos = self._aggregate_by_category(tid, limit * 3)
+        for vod in extra_videos:
+            if vod["vod_id"] not in seen:
+                seen.add(vod["vod_id"])
+                videos.append(vod)
 
+        # 3. 应用筛选器
+        if extend:
+            area = extend.get("area", "all")
+            year = extend.get("year", "all")
+            letter = extend.get("letter", "all")
+            if area != "all" or year != "all" or letter != "all":
+                filtered = []
+                for vod in videos:
+                    match = True
+                    if area != "all" and vod.get("vod_area") and area not in vod.get("vod_area", ""):
+                        match = False
+                    if year != "all" and year != "classic":
+                        vy = vod.get("vod_year", "")
+                        if vy and vy != year:
+                            match = False
+                    if letter != "all":
+                        vn = vod.get("vod_name", "")
+                        if vn and vn[0].upper() != letter:
+                            match = False
+                    if match:
+                        filtered.append(vod)
+                videos = filtered
+
+        total = len(videos)
+        start = (page - 1) * limit
+        end = start + limit
         return {
-            "list": videos[:limit],
+            "list": videos[start:end],
             "page": page,
-            "pagecount": max(1, (len(videos) + limit - 1) // limit),
+            "pagecount": max(1, (total + limit - 1) // limit),
             "limit": limit,
-            "total": len(videos),
+            "total": total,
         }
 
     # ==================== 搜索 ====================
@@ -529,35 +655,28 @@ class Spider(Spider):
         limit = 30
         if not key:
             return {"list": []}
-        # 尝试聚合搜索（source=all）
-        data = self._call_fn("search", {"query": key, "source": "all", "area": "all", "type": "all", "year": "all"})
+        # 逐源聚合搜索
+        sources = self.get_sources()
+        source_codes = [s.get("source") for s in sources if s.get("source")]
         all_items = []
-        if isinstance(data, dict):
-            items = data.get("items", []) or []
-            if isinstance(items, list) and items:
-                all_items.extend(items)
-        # 如果结果为空，fallback 到逐源搜索
-        if not all_items:
-            sources = self.get_sources()
-            source_codes = [s.get("source") for s in sources if s.get("source")]
-            try:
-                with ThreadPoolExecutor(max_workers=5) as pool:
-                    futures = {pool.submit(self._search_one_source, sc, key): sc for sc in source_codes}
-                    for fut in as_completed(futures, timeout=20):
-                        try:
-                            items = fut.result(timeout=8)
-                        except Exception:
-                            items = []
-                        if items:
-                            all_items.extend(items)
-            except Exception:
-                for sc in source_codes:
+        try:
+            with ThreadPoolExecutor(max_workers=5) as pool:
+                futures = {pool.submit(self._search_one_source, sc, key): sc for sc in source_codes}
+                for fut in as_completed(futures, timeout=20):
                     try:
-                        items = self._search_one_source(sc, key)
-                        if items:
-                            all_items.extend(items)
+                        items = fut.result(timeout=8)
                     except Exception:
-                        continue
+                        items = []
+                    if items:
+                        all_items.extend(items)
+        except Exception:
+            for sc in source_codes:
+                try:
+                    items = self._search_one_source(sc, key)
+                    if items:
+                        all_items.extend(items)
+                except Exception:
+                    continue
 
         videos = []
         seen = set()
