@@ -29,7 +29,6 @@ CATEGORIES = [
     {"type_id": "21", "type_name": "海外劇"},
     {"type_id": "2", "type_name": "電視劇"},
     {"type_id": "25", "type_name": "短劇"},
-    {"type_id": "4", "type_name": "動漫"},
     {"type_id": "3", "type_name": "綜藝"},
     {"type_id": "23", "type_name": "紀錄片"},
     {"type_id": "1", "type_name": "電影"},
