@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-# gimyai.tw 劇迷 (MacCMS v10 + JD4K 4K线路)
-# 4K链路: play页 player_data(url=JD-xxx,from=JD4K) -> play.aigm.tv/jd/api.php?url=JD-xxx -> AWS签名mp4直链(HEVC 3840x1606)
+# gimyai.org 劇迷 (MACMS v10 镜像站 - 无CF验证)
+# 原站 gimyai.tw 启用了Cloudflare Managed Challenge + Turnstile验证
+# 本脚本使用镜像站 gimyai.org 绕过验证
 import requests
 import re
 import json
@@ -14,21 +15,24 @@ except ImportError:
         def init(self, extend=""):
             pass
 
-HOST = 'https://gimyai.tw'
+# 使用镜像站，避免CF Turnstile验证
+HOST = 'https://gimyai.org'
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+
+# 镜像站分类映射
 CATEGORIES = [
     {"type_id": "13", "type_name": "陸劇"},
     {"type_id": "20", "type_name": "韓劇"},
     {"type_id": "15", "type_name": "日劇"},
     {"type_id": "14", "type_name": "台劇"},
-    {"type_id": "21", "type_name": "港劇"},
-    {"type_id": "31", "type_name": "海外劇"},
+    {"type_id": "22", "type_name": "港劇"},
+    {"type_id": "21", "type_name": "海外劇"},
     {"type_id": "2", "type_name": "電視劇"},
-    {"type_id": "34", "type_name": "短劇"},
-    {"type_id": "38", "type_name": "AI漫劇"},
+    {"type_id": "25", "type_name": "短劇"},
     {"type_id": "4", "type_name": "動漫"},
-    {"type_id": "29", "type_name": "綜藝"},
-    {"type_id": "22", "type_name": "紀錄片"},
+    {"type_id": "3", "type_name": "綜藝"},
+    {"type_id": "23", "type_name": "紀錄片"},
+    {"type_id": "1", "type_name": "電影"},
 ]
 
 
@@ -45,14 +49,16 @@ class Spider(Spider):
             "Referer": HOST,
             "X-Requested-With": "XMLHttpRequest",
         }
+        self.session = requests.Session()
+        self.session.headers.update(self.headers)
 
     def getName(self):
-        return "劇迷Gimy"
+        return "劇迷Gimy(镜像)"
 
     def homeContent(self, filter):
         result = {"class": CATEGORIES, "list": []}
         try:
-            r = requests.get(HOST, headers=self.headers, timeout=12)
+            r = self.session.get(HOST, timeout=12)
             result["list"] = self._cards(r.text)
         except Exception:
             pass
@@ -60,19 +66,24 @@ class Spider(Spider):
 
     def homeVideoContent(self):
         try:
-            r = requests.get(HOST, headers=self.headers, timeout=12)
+            r = self.session.get(HOST, timeout=12)
             return {"list": self._cards(r.text)}
         except Exception:
             return {"list": []}
 
     def categoryContent(self, tid, pg, filter, extend):
-        result = {"list": [], "page": int(pg), "pagecount": 1, "limit": 228, "total": 0}
-        url = f"{HOST}/genre/{tid}.html"
+        result = {"list": [], "page": int(pg), "pagecount": 1, "limit": 20, "total": 0}
+        # 镜像站使用 /vodtype/{id}.html 格式
+        if int(pg) > 1:
+            url = f"{HOST}/vodtype/{tid}/page/{pg}.html"
+        else:
+            url = f"{HOST}/vodtype/{tid}.html"
         try:
-            r = requests.get(url, headers=self.headers, timeout=12)
-            result["list"] = self._cards(r.text)
-            result["pagecount"] = 1
-            result["total"] = len(result["list"])
+            r = self.session.get(url, timeout=12)
+            videos = self._cards(r.text)
+            result["list"] = videos
+            result["pagecount"] = max(1, (len(videos) + 19) // 20) if videos else 1
+            result["total"] = len(videos)
         except Exception:
             pass
         return result
@@ -82,69 +93,90 @@ class Spider(Spider):
         if not ids:
             return result
         vod_id = ids[0]
-        if not vod_id.startswith('/detail/'):
-            vod_id = f"/detail/{vod_id}"
+        # 镜像站使用 /voddetail/{id}.html 格式
+        if not vod_id.startswith('/voddetail/'):
+            vod_id = f"/voddetail/{vod_id}"
         url = HOST + vod_id
         if not url.endswith('.html'):
             url += '.html'
         try:
-            r = requests.get(url, headers=self.headers, timeout=12)
+            r = self.session.get(url, headers=self.headers, timeout=12)
             html = r.text
         except Exception:
             return result
+
         vod = {}
         vod["vod_id"] = vod_id
-        m = re.search(r'<h1 class="detail__title">([^<]+)</h1>', html)
+        # 提取标题
+        m = re.search(r'<h1[^>]*>([^<]+)</h1>', html)
         vod["vod_name"] = m.group(1).strip() if m else ""
+        # 提取海报
         pic = ""
-        m = re.search(r'<img[^>]*src="(https?://[^"]+)"[^>]*alt="' + re.escape(vod["vod_name"]) + r'"', html)
+        m = re.search(r'background:\s*url\(([^)]+)\)', html)
         if m:
-            pic = m.group(1)
+            pic = m.group(1).strip('"\'')
+            if pic.startswith('/'):
+                pic = HOST + pic
         if not pic:
-            m = re.search(r'class="detail__thumb[^"]*"[\s\S]{0,300}?src="(https?://[^"]+)"', html)
+            m = re.search(r'<img[^>]*src="(https?://[^"]+)"', html)
             if m:
-                pic = m.group(1)
-        vod["vod_pic"] = pic.replace('&amp;', '&')
+                pic = m.group(1).replace('&amp;', '&')
+        vod["vod_pic"] = pic
         vod["vod_remarks"] = ""
-        m = re.search(r'狀態：</span>([^<]+)<', html)
+        m = re.search(r'class="note[^>]*>([^<]+)<', html)
         if m:
             vod["vod_remarks"] = m.group(1).strip()
         vod["vod_year"] = ""
-        m = re.search(r'(\d{4})</a>', html)
-        if m:
-            vod["vod_year"] = m.group(1)
         vod["vod_actor"] = ""
-        m = re.search(r'主演：</span>([\s\S]{0,400}?)</div>', html)
+        m = re.search(r'class="subtitle[^>]*>([^<]+)<', html)
         if m:
-            vod["vod_actor"] = ",".join(re.findall(r'>([^<>]+)</a>', m.group(1))).strip(",")
+            vod["vod_actor"] = m.group(1).strip()
         vod["vod_director"] = ""
-        m = re.search(r'導演：</span>([\s\S]{0,200}?)</div>', html)
-        if m:
-            vod["vod_director"] = ",".join(re.findall(r'>([^<>]+)</a>', m.group(1))).strip(",")
         vod["vod_content"] = ""
-        m = re.search(r'(?:簡介|剧情|剧情简介)[：:]([\s\S]{0,800}?)</(?:div|p)>', html)
+        m = re.search(r'name="description"\s+content="([^"]+)"', html)
         if m:
-            vod["vod_content"] = re.sub(r'<[^>]+>', '', m.group(1)).strip()
-        lines = self._routes(html)
-        if lines:
-            vod["vod_play_from"] = '$$$'.join(n for n, s in lines)
-            vod["vod_play_url"] = '$$$'.join(self._eps(html, lines))
+            vod["vod_content"] = re.sub(r'^[^,]+,\s*', '', m.group(1)).strip()
+
+        # 提取播放集数
+        eps = self._eps_from_detail(html)
+        if eps:
+            vod["vod_play_from"] = "線上看"
+            vod["vod_play_url"] = "#".join(eps)
+        else:
+            # 尝试从详情页提取播放链接
+            play_links = re.findall(r'href="(/video/\d+-\d+\.html)#sid=(\d+)"', html)
+            if play_links:
+                seen = set()
+                eps = []
+                for link, sid in play_links:
+                    key = (link, sid)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    # 提取集数
+                    em = re.search(r'/video/\d+-(\d+)\.html', link)
+                    ep_num = em.group(1) if em else link
+                    eps.append(f"{ep_num}${link}#sid={sid}")
+                if eps:
+                    vod["vod_play_from"] = "線上看"
+                    vod["vod_play_url"] = "#".join(eps)
+
         result["list"] = [vod]
         return result
 
     def searchContent(self, key, quick, pg=1):
         result = {"list": [], "page": 1, "pagecount": 1, "limit": 20, "total": 0}
         q = quote(key)
-        for u in [f"{HOST}/find/{q}------------.html", f"{HOST}/find/------------.html?wd={q}"]:
-            try:
-                r = requests.get(u, headers=self.headers, timeout=12)
-                lst = self._cards(r.text)
-                if lst:
-                    result["list"] = lst
-                    result["total"] = len(lst)
-                    break
-            except Exception:
-                continue
+        # 镜像站搜索URL
+        url = f"{HOST}/vodsearch/{q}-------------.html"
+        try:
+            r = self.session.get(url, headers=self.headers, timeout=12)
+            lst = self._cards(r.text)
+            if lst:
+                result["list"] = lst
+                result["total"] = len(lst)
+        except Exception:
+            pass
         return result
 
     def playerContent(self, flag, id, vipFlags):
@@ -154,21 +186,13 @@ class Spider(Spider):
             if not play_url.endswith('.html'):
                 play_url += '.html'
             try:
-                r = requests.get(play_url, headers=self.headers, timeout=12)
+                r = self.session.get(play_url, headers=self.headers, timeout=12)
                 pd = self._player_data(r.text)
             except Exception:
                 return result
             if not pd:
                 return result
             url = pd.get("url", "").replace('\\/', '/')
-            encrypt = str(pd.get("encrypt", 0))
-            if encrypt == "1":
-                url = re.sub(r'%([0-9A-Fa-f]{2})', lambda m: chr(int(m.group(1), 16)), url)
-            elif encrypt == "2":
-                try:
-                    url = base64.b64decode(url).decode('utf-8', errors='ignore')
-                except Exception:
-                    pass
             if not url:
                 return result
             result["url"] = self._resolve(url)
@@ -177,96 +201,103 @@ class Spider(Spider):
         return result
 
     def _resolve(self, url):
-        if url.startswith('JD-') or url.startswith('JDQM-') or url.startswith('JDHG-') or url.startswith('NS4K-') or url.startswith('NSYS-'):
-            return self._api(url, 'jd')
-        if url.startswith('qsvip-'):
-            return self._api(url, 'qs')
-        if re.search(r'v\.qq\.com|iqiyi\.com|youku\.com|bilibili\.com|mgtv\.com|sohu\.com|pptv\.com|letv\.com|xigua\.com', url):
-            return self._api(url, 'lb')
+        # 直接返回m3u8等直链
         return url
 
-    def _api(self, raw, mode):
-        try:
-            r = requests.get(f"https://play.aigm.tv/{mode}/api.php?url={quote(raw)}", headers=self.headers_ajax, timeout=15)
-            d = r.json()
-            if d.get("code") == 200 and d.get("url"):
-                return d["url"]
-        except Exception:
-            pass
-        return raw
-
     def _player_data(self, html):
-        m = re.search(r'var\s+player_data\s*=\s*', html)
-        if not m:
-            return None
-        i = m.end()
-        depth = 0
-        for j in range(i, len(html)):
-            c = html[j]
-            if c == '{':
-                depth += 1
-            elif c == '}':
-                depth -= 1
-                if depth == 0:
+        """解析player_aaaa数据（镜像站格式）"""
+        # 从script标签中提取
+        scripts = re.findall(r'<script[^>]*>([\s\S]{0,5000}?)</script>', html)
+        for s in scripts:
+            if 'player_aaaa' in s:
+                m = re.search(r'player_aaaa\s*=\s*(\{[\s\S]*?\"nid\"\s*:\s*\d+\})', s)
+                if m:
                     try:
-                        return json.loads(html[i:j + 1])
+                        return json.loads(m.group(1))
                     except Exception:
-                        return None
+                        pass
+        # 备用：直接搜索
+        m = re.search(r'var\s+player_aaaa\s*=\s*(\{[\s\S]*?\"nid\"\s*:\s*\d+\})', html)
+        if m:
+            try:
+                return json.loads(m.group(1))
+            except Exception:
+                pass
         return None
 
     def _cards(self, html):
+        """提取视频卡片（镜像站格式）"""
         out = []
         seen = set()
-        for m in re.finditer(r'<a class="poster" href="(/detail/\d+\.html)">([\s\S]{0,900}?)</a>', html):
-            path, block = m.group(1), m.group(2)
-            if path in seen:
+        # 镜像站使用 <li class="col-md-2 col-sm-3 col-xs-4"> 结构
+        for m in re.finditer(r'<li\s+class="col-md-2\s+col-sm-3\s+col-xs-4">([\s\S]{0,1500}?)</li>', html):
+            block = m.group(1)
+            path = ""
+            pm = re.search(r'href="(/voddetail/\d+\.html)"', block)
+            if pm:
+                path = pm.group(1)
+            if not path or path in seen:
                 continue
             seen.add(path)
+
             pic = ""
-            im = re.search(r'<img[^>]*src="(https?://[^"]+)"', block)
+            im = re.search(r'data-original="(https?://[^"]+)"', block)
             if im:
                 pic = im.group(1).replace('&amp;', '&')
+            if not pic:
+                im = re.search(r'background:\s*url\(([^)]+)\)', block)
+                if im:
+                    pic = im.group(1).strip('"\'')
+                    if pic.startswith('/'):
+                        pic = HOST + pic
+            if not pic:
+                im = re.search(r'<img[^>]*src="(https?://[^"]+)"', block)
+                if im:
+                    pic = im.group(1).replace('&amp;', '&')
+
             name = ""
-            nm = re.search(r'poster__title">([^<]+)<', block)
+            nm = re.search(r'title="([^"]+)"', block)
             if nm:
                 name = nm.group(1).strip()
+            if not name:
+                nm = re.search(r'<h5[^>]*><a[^>]*>([^<]+)</a>', block)
+                if nm:
+                    name = nm.group(1).strip()
+
             remark = ""
-            rm = re.search(r'poster__status">([^<]+)<', block)
+            rm = re.search(r'class="note[^>]*>([^<]+)<', block)
             if rm:
                 remark = rm.group(1).strip()
-            if not name:
-                am = re.search(r'<img[^>]*alt="([^"]+)"', block)
-                if am:
-                    name = am.group(1)
+
             if name:
                 out.append({"vod_id": path, "vod_name": name, "vod_pic": pic, "vod_remarks": remark})
         return out
 
-    def _routes(self, html):
-        routes = []
-        for m in re.finditer(r'route-title">([^<]+)<[\s\S]{0,120}?data-route-sid="(\d+)"', html):
-            name = m.group(1).strip()
-            sid = m.group(2)
-            if name and sid not in [r[1] for r in routes]:
-                routes.append((name, sid))
-        routes.sort(key=lambda x: 0 if '4K' in x[0] else 1)
-        return routes
+    def _eps_from_detail(self, html):
+        """从详情页提取集数列表"""
+        ep_links = re.findall(r'href="(/video/\d+-\d+\.html)#sid=(\d+)"', html)
+        if not ep_links:
+            return []
 
-    def _eps(self, html, routes):
-        segs = {}
-        for m in re.finditer(r'data-route-sid="(\d+)"([\s\S]{0,30000}?)(?=data-route-sid=|$)', html):
-            segs[m.group(1)] = m.group(2)
+        # 按sid分组
+        by_sid = {}
+        for link, sid in ep_links:
+            if sid not in by_sid:
+                by_sid[sid] = []
+            by_sid[sid].append(link)
+
         lines = []
-        for name, sid in routes:
-            seg = segs.get(sid, "")
+        for sid, links in sorted(by_sid.items()):
             eps = []
             seen = set()
-            for e in re.finditer(r'href="(/play/\d+-\d+-\d+\.html)"[^>]*>\s*([^<]{1,12})', seg):
-                p, n = e.group(1), e.group(2).strip()
-                if p in seen:
+            for link in links:
+                if link in seen:
                     continue
-                seen.add(p)
-                eps.append(f"{n}${p}")
+                seen.add(link)
+                # 提取集数
+                em = re.search(r'/video/\d+-(\d+)\.html', link)
+                ep_num = em.group(1) if em else link
+                eps.append(f"{ep_num}${link}#sid={sid}")
             if eps:
                 lines.append("#".join(eps))
         return lines
@@ -275,4 +306,4 @@ class Spider(Spider):
         return [200, "video/MP2T", {}, param]
 
     def destroy(self):
-        pass
+        self.session.close()
