@@ -137,10 +137,15 @@ class Spider(Spider):
         if m:
             vod["vod_content"] = re.sub(r'^[^,]+,\s*', '', m.group(1)).strip()
 
-        # 提取播放集数
+        # 提取播放集数和线路名
         eps = self._eps_from_detail(html)
+        route_names = self._get_route_names(html)
         if eps:
-            vod["vod_play_from"] = "$$$".join(["線上看"] * len(eps))
+            # 使用实际线路名，如果没有则使用默认名
+            if route_names and len(route_names) == len(eps):
+                vod["vod_play_from"] = "$$$".join(route_names)
+            else:
+                vod["vod_play_from"] = "$$$".join(["線上看"] * len(eps))
             vod["vod_play_url"] = "$$$".join(eps)
         else:
             # 尝试从详情页提取播放链接
@@ -241,9 +246,12 @@ class Spider(Spider):
             seen.add(path)
 
             pic = ""
-            im = re.search(r'data-original="(https?://[^"]+)"', block)
+            # 优先从data-original获取（懒加载图片）
+            im = re.search(r'data-original="([^"]+)"', block)
             if im:
-                pic = im.group(1).replace('&amp;', '&')
+                pic = im.group(1)
+                if pic.startswith('/'):
+                    pic = HOST + pic
             if not pic:
                 im = re.search(r'background:\s*url\(([^)]+)\)', block)
                 if im:
@@ -251,9 +259,11 @@ class Spider(Spider):
                     if pic.startswith('/'):
                         pic = HOST + pic
             if not pic:
-                im = re.search(r'<img[^>]*src="(https?://[^"]+)"', block)
+                im = re.search(r'<img[^>]*src="([^"]+)"', block)
                 if im:
-                    pic = im.group(1).replace('&amp;', '&')
+                    pic = im.group(1)
+                    if pic.startswith('/'):
+                        pic = HOST + pic
 
             name = ""
             nm = re.search(r'title="([^"]+)"', block)
@@ -328,6 +338,11 @@ class Spider(Spider):
                 lines.append("#".join(eps))
 
         return lines
+
+    def _get_route_names(self, html):
+        """提取线路名称列表"""
+        routes = re.findall(r'<li><a\s+class="gico[^"]*"[^>]*>([^<]+)</a></li>', html)
+        return [r.strip() for r in routes]
 
     def localProxy(self, param):
         return [200, "video/MP2T", {}, param]
