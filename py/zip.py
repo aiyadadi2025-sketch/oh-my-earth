@@ -359,15 +359,28 @@ class Spider(Spider):
 
     # ==================== 首页 ====================
 
+    # 热门搜索词，用于补充首页资源数量
+    _hot_keywords = [
+        "爱情", "喜剧", "动作", "科幻", "恐怖",
+        "悬疑", "动画", "纪录片", "剧情", "战争",
+        "冒险", "奇幻", "惊悚", "家庭", "历史",
+    ]
+
     def _home_sections(self):
         data = self._call_fn("home", {})
         if isinstance(data, dict):
             return data.get("sections", {}) or {}
         return {}
 
+    def _merge_videos(self, items, seen, limit=60):
+        """将一批搜索/分类结果合并到已有列表中，去重并限制总数"""
+        return None  # 内联使用，保留接口占位
+
     def homeContent(self, filter):
         categories = [{"type_id": k, "type_name": v} for k, v in self.categories.items()]
         sections = self._home_sections()
+
+        # 从首页 sections 收集初始视频
         videos = []
         seen = set()
         for cat, items in sections.items():
@@ -378,7 +391,41 @@ class Spider(Spider):
                 if vod and vod["vod_id"] not in seen:
                     seen.add(vod["vod_id"])
                     videos.append(vod)
-        return {"class": categories, "list": videos[:30], "filters": {}}
+
+        # 通过热门搜索补充更多资源（每个关键词最多取10条）
+        if len(videos) < 60:
+            search_h = self._get_hash("search")
+            if search_h:
+                try:
+                    with ThreadPoolExecutor(max_workers=5) as pool:
+                        futures = {}
+                        for kw in self._hot_keywords:
+                            futures[pool.submit(
+                                self._call_fn, "search",
+                                {"query": kw, "source": "bfzy", "area": "all", "type": "all", "year": "all"}
+                            )] = kw
+                        for fut in as_completed(futures, timeout=25):
+                            if len(videos) >= 60:
+                                break
+                            try:
+                                data = fut.result(timeout=8)
+                            except Exception:
+                                continue
+                            if not isinstance(data, dict):
+                                continue
+                            for item in (data.get("items") or []):
+                                if not isinstance(item, dict):
+                                    continue
+                                vod = self._item_to_vod(item)
+                                if vod and vod["vod_id"] not in seen:
+                                    seen.add(vod["vod_id"])
+                                    videos.append(vod)
+                                if len(videos) >= 60:
+                                    break
+                except Exception:
+                    pass
+
+        return {"class": categories, "list": videos[:60], "filters": {}}
 
     def homeVideoContent(self):
         sections = self._home_sections()
@@ -396,24 +443,72 @@ class Spider(Spider):
 
     # ==================== 分类 ====================
 
+    # 分类到关键词的映射，用于聚合更多资源
+    _category_keywords = {
+        "movie": ["爱情", "喜剧", "动作", "科幻", "悬疑", "剧情", "冒险", "奇幻"],
+        "tv": ["爱情", "喜剧", "悬疑", "剧情", "冒险", "科幻"],
+        "short": ["爱情", "喜剧", "剧情", "悬疑"],
+        "variety": ["喜剧", "爱情", "综艺"],
+        "anime": ["动画", "科幻", "冒险", "喜剧"],
+    }
+
     def categoryContent(self, tid, pg, filter, extend):
         page = int(pg) if pg else 1
-        limit = 30
-        sections = self._home_sections()
-        items = sections.get(tid, []) if isinstance(sections, dict) else []
-        if not isinstance(items, list):
-            items = []
+        limit = 60
         videos = []
         seen = set()
-        for item in items:
-            vod = self._item_to_vod(item)
-            if vod and vod["vod_id"] not in seen:
-                seen.add(vod["vod_id"])
-                videos.append(vod)
+
+        # 1. 先从首页 sections 取该分类的固定内容
+        sections = self._home_sections()
+        items = sections.get(tid, []) if isinstance(sections, dict) else []
+        if isinstance(items, list):
+            for item in items:
+                vod = self._item_to_vod(item)
+                if vod and vod["vod_id"] not in seen:
+                    seen.add(vod["vod_id"])
+                    videos.append(vod)
+
+        # 2. 通过关键词+多源搜索补充同类型资源
+        keywords = self._category_keywords.get(tid, [])
+        if keywords:
+            sources = self.get_sources()
+            source_codes = [s.get("source") for s in sources if s.get("source")]
+            try:
+                with ThreadPoolExecutor(max_workers=5) as pool:
+                    futures = {}
+                    for kw in keywords:
+                        for sc in source_codes:
+                            if len(videos) >= limit:
+                                break
+                            futures[pool.submit(
+                                self._call_fn, "search",
+                                {"query": kw, "source": sc, "area": "all", "type": "all", "year": "all"}
+                            )] = (kw, sc)
+                    for fut in as_completed(futures, timeout=30):
+                        if len(videos) >= limit:
+                            break
+                        try:
+                            data = fut.result(timeout=8)
+                        except Exception:
+                            continue
+                        if not isinstance(data, dict):
+                            continue
+                        for item in (data.get("items") or []):
+                            if not isinstance(item, dict):
+                                continue
+                            vod = self._item_to_vod(item)
+                            if vod and vod["vod_id"] not in seen:
+                                seen.add(vod["vod_id"])
+                                videos.append(vod)
+                            if len(videos) >= limit:
+                                break
+            except Exception:
+                pass
+
         return {
             "list": videos[:limit],
             "page": page,
-            "pagecount": 1,
+            "pagecount": max(1, (len(videos) + limit - 1) // limit),
             "limit": limit,
             "total": len(videos),
         }
