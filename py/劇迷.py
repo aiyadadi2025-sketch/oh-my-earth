@@ -16,7 +16,7 @@ except ImportError:
             pass
 
 # 使用镜像站，避免CF Turnstile验证
-HOST = 'https://gimyai.org'
+HOST = 'https://gimytv.biz/'
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 
 # 镜像站分类映射
