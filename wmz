@@ -23,16 +23,6 @@
       "changeable": 1
     },
     {
-      "key": "云朵影视",
-      "name": "🥇云朵｜影视",
-      "type": 3,
-      "api": "./py/云朵影视.py",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "changeable": 1
-    },
-    {
       "key": "劇迷",
       "name": "🥇劇迷｜影视",
       "type": 3,
