@@ -140,8 +140,8 @@ class Spider(Spider):
         # 提取播放集数
         eps = self._eps_from_detail(html)
         if eps:
-            vod["vod_play_from"] = "線上看"
-            vod["vod_play_url"] = "#".join(eps)
+            vod["vod_play_from"] = "$$$".join(["線上看"] * len(eps))
+            vod["vod_play_url"] = "$$$".join(eps)
         else:
             # 尝试从详情页提取播放链接
             play_links = re.findall(r'href="(/video/\d+-\d+\.html)#sid=(\d+)"', html)
@@ -274,32 +274,59 @@ class Spider(Spider):
         return out
 
     def _eps_from_detail(self, html):
-        """从详情页提取集数列表"""
-        ep_links = re.findall(r'href="(/video/\d+-\d+\.html)#sid=(\d+)"', html)
-        if not ep_links:
-            return []
+        """从详情页提取集数列表（支持多线路）"""
+        # 提取线路名称和对应的playlist ID
+        routes = re.findall(r'<li><a\s+class="gico[^"]*"[^>]*>([^<]+)</a></li>\s*<ul[^>]*id="con_playlist_(\d+)"', html)
 
-        # 按sid分组
-        by_sid = {}
-        for link, sid in ep_links:
-            if sid not in by_sid:
-                by_sid[sid] = []
-            by_sid[sid].append(link)
+        if not routes:
+            # 备用：直接按sid分组
+            ep_links = re.findall(r'href="(/video/\d+-\d+\.html)#sid=(\d+)"', html)
+            if not ep_links:
+                return []
+            by_sid = {}
+            for link, sid in ep_links:
+                if sid not in by_sid:
+                    by_sid[sid] = []
+                by_sid[sid].append(link)
+            lines = []
+            for sid, links in sorted(by_sid.items()):
+                eps = []
+                seen = set()
+                for link in links:
+                    if link in seen:
+                        continue
+                    seen.add(link)
+                    em = re.search(r'/video/\d+-(\d+)\.html', link)
+                    ep_num = em.group(1) if em else link
+                    # 使用 #sid=X 作为链接的一部分，但不作为分隔符
+                    eps.append(f"{ep_num}${link}")
+                if eps:
+                    lines.append("#".join(eps))
+            return lines
 
+        # 按线路提取集数
         lines = []
-        for sid, links in sorted(by_sid.items()):
+        for route_name, sid in routes:
+            # 提取该线路的所有集数
+            # 格式：<li><a ... href="/video/30-1.html#sid=3">第01集</a></li>
             eps = []
             seen = set()
-            for link in links:
+            for m in re.finditer(r'href="(/video/\d+-\d+\.html)#sid=' + re.escape(sid) + r'"[^>]*>([^<]+)<', html):
+                link = m.group(1)
+                ep_title = m.group(2).strip()
                 if link in seen:
                     continue
                 seen.add(link)
-                # 提取集数
-                em = re.search(r'/video/\d+-(\d+)\.html', link)
-                ep_num = em.group(1) if em else link
-                eps.append(f"{ep_num}${link}#sid={sid}")
+                if ep_title:
+                    # 使用 #sid=X 作为链接的一部分
+                    eps.append(f"{ep_title}${link}")
+                else:
+                    em = re.search(r'/video/\d+-(\d+)\.html', link)
+                    ep_num = em.group(1) if em else link
+                    eps.append(f"{ep_num}${link}")
             if eps:
                 lines.append("#".join(eps))
+
         return lines
 
     def localProxy(self, param):
