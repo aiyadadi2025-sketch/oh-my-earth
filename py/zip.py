@@ -11,11 +11,18 @@
   3. 成功识别的 hash 持久化缓存到本地文件，避免每次重启重新探测
   4. 缓存 hash 调用失败时自动触发重新发现
   5. 请求头自动适配 CORS 校验
+
+稳定性优化:
+  1. 聚合结果本地持久化缓存，减少重复网络请求
+  2. 分类页采用"缓存优先 + 增量更新"策略
+  3. 搜索支持分页（本地分页，基于聚合结果）
+  4. 减少并发数避免触发限流
 """
 import os
 import re
 import sys
 import json
+import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -27,6 +34,7 @@ class Spider(Spider):
 
     # 缓存文件路径（相对当前文件）
     CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "zip0_hashes.json")
+    AGG_CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "zip0_aggregate.json")
 
     def init(self, extend=""):
         self.site_url = "https://zip0.com"
@@ -36,14 +44,12 @@ class Spider(Spider):
             'Accept-Language': 'zh-CN,zh;q=0.9',
             'Referer': self.site_url + "/",
         }
-        # 基础 server function 头（不含 CORS，先试探）
         self._fn_headers_base = {
             'User-Agent': self.headers['User-Agent'],
             'Accept': 'application/x-ndjson, application/json',
             'x-tsr-serverFn': 'true',
             'Referer': self.site_url + "/",
         }
-        # 完整 CORS 头（Cloudflare 校验需要）
         self.fn_headers = {
             **self._fn_headers_base,
             'Origin': self.site_url,
@@ -53,7 +59,6 @@ class Spider(Spider):
         }
         self.default_pic = "https://pic.rmb.bdstatic.com/bjh/user/default.png"
 
-        # 分类映射（type_id -> type_name）
         self.categories = {
             "movie": "电影",
             "tv": "长剧",
@@ -62,7 +67,7 @@ class Spider(Spider):
             "anime": "动漫",
         }
 
-        # 内置兜底 hash（最后一次确认有效的值，作为极速冷启动）
+        # 内置兜底 hash
         self._built_in_hashes = {
             "catalog": "8fa43bc249007c84c4782b4237f5181449e18cd1723d5656f5f3c45c42e2daab",
             "home":    "b42ee085174093515a801f91174a8e544266b579c62db3cecc6d13f99a17dd1d",
@@ -72,12 +77,13 @@ class Spider(Spider):
         self._hashes = {}
         self._sources = None
         self._discovery_done = False
-        # 本地聚合缓存：key -> (items, timestamp)
-        self._cache = {}
-        self._cache_ttl = 3600  # 缓存过期时间（秒）
 
-        # 启动时加载缓存或内置 hash
+        # 聚合缓存（内存）
+        self._agg_cache = {}    # tid -> (videos, timestamp)
+        self._agg_cache_ttl = 7200  # 2小时
+
         self._load_cached_hashes()
+        self._load_agg_cache()
 
     # ==================== 持久化缓存 ====================
 
@@ -97,6 +103,33 @@ class Spider(Spider):
         try:
             with open(self.CACHE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self._hashes, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    def _load_agg_cache(self):
+        """加载聚合缓存"""
+        try:
+            if os.path.exists(self.AGG_CACHE_FILE):
+                with open(self.AGG_CACHE_FILE, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    now = time.time()
+                    for tid, val in data.items():
+                        if isinstance(val, dict) and 'videos' in val and 'time' in val:
+                            if now - val['time'] < self._agg_cache_ttl:
+                                self._agg_cache[tid] = (val['videos'], val['time'])
+        except Exception:
+            pass
+
+    def _save_agg_cache(self):
+        """持久化聚合缓存"""
+        try:
+            now = time.time()
+            data = {}
+            for tid, (videos, ts) in self._agg_cache.items():
+                data[tid] = {'videos': videos, 'time': ts}
+            with open(self.AGG_CACHE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
         except Exception:
             pass
 
@@ -171,7 +204,6 @@ class Spider(Spider):
             obj = json.loads(text)
             if isinstance(obj, dict) and obj.get("error"):
                 return {"__error__": obj.get("error")}
-            # 先整体 devalue 解码，再取 result 字段
             decoded = self._dec(obj)
             if isinstance(decoded, dict):
                 return decoded.get("result", decoded)
@@ -228,7 +260,6 @@ class Spider(Spider):
             if not all_hashes:
                 return
             found = {}
-            # 3.1 探测 catalog / home
             for h in all_hashes:
                 if "catalog" in found and "home" in found:
                     break
@@ -240,7 +271,6 @@ class Spider(Spider):
                     found["catalog"] = h
                 elif isinstance(data, dict) and "sections" in data:
                     found["home"] = h
-            # 3.2 探测 search
             if "search" not in found:
                 probe_args = {"query": "test", "source": "bfzy", "area": "all", "type": "all", "year": "all"}
                 for h in all_hashes:
@@ -254,7 +284,6 @@ class Spider(Spider):
                         if items and isinstance(items[0], dict) and "source" in items[0] and "title" in items[0]:
                             found["search"] = h
                             break
-            # 3.3 探测 detail
             if "detail" not in found:
                 probe_item = None
                 sh = found.get("search") or self._hashes.get("search")
@@ -338,7 +367,7 @@ class Spider(Spider):
 
     # ==================== 聚合搜索（分类页/首页补充） ====================
 
-    # 分类关键词配置：每个分类用哪些搜索词 + 优先选择的源
+    # 分类关键词配置
     _category_keywords = {
         "movie":  [("爱情", ["bfzy", "dyttzy", "ruyi", "ffzy"]),
                    ("喜剧", ["bfzy", "dyttzy", "ruyi"]),
@@ -367,8 +396,14 @@ class Spider(Spider):
                    ("喜剧", ["bfzy"])],
     }
 
-    def _aggregate_by_category(self, tid, limit=60):
-        """根据分类聚合搜索，返回去重后的视频列表"""
+    def _aggregate_by_category(self, tid, limit=90, use_cache=True):
+        """根据分类聚合搜索，返回去重后的视频列表。优先使用缓存。"""
+        # 检查内存缓存
+        if use_cache and tid in self._agg_cache:
+            videos, ts = self._agg_cache[tid]
+            if time.time() - ts < self._agg_cache_ttl:
+                return videos
+
         items_config = self._category_keywords.get(tid, [])
         if not items_config:
             return []
@@ -379,10 +414,9 @@ class Spider(Spider):
         source_codes = [s.get("source") for s in sources if s.get("source")]
 
         try:
-            with ThreadPoolExecutor(max_workers=6) as pool:
+            with ThreadPoolExecutor(max_workers=4) as pool:
                 futures = {}
                 for kw, pri_sources in items_config:
-                    # 优先用配置中的源，不足的补全
                     used_sources = list(pri_sources)
                     for sc in source_codes:
                         if sc not in used_sources:
@@ -391,20 +425,19 @@ class Spider(Spider):
                         if len(videos) >= limit:
                             break
                         futures[pool.submit(
-                            self._call_fn, "search",
-                            {"query": kw, "source": sc, "area": "all", "type": "all", "year": "all"}
+                            self._search_one_source_safe, kw, sc
                         )] = (kw, sc)
 
-                for fut in as_completed(futures, timeout=45):
+                for fut in as_completed(futures, timeout=60):
                     if len(videos) >= limit:
                         break
                     try:
-                        data = fut.result(timeout=8)
+                        items = fut.result(timeout=10)
                     except Exception:
                         continue
-                    if not isinstance(data, dict):
+                    if not isinstance(items, list):
                         continue
-                    for item in (data.get("items") or []):
+                    for item in items:
                         if not isinstance(item, dict):
                             continue
                         vod = self._item_to_vod(item)
@@ -415,7 +448,34 @@ class Spider(Spider):
                             break
         except Exception:
             pass
+
+        # 存入内存缓存
+        if videos:
+            self._agg_cache[tid] = (videos, time.time())
+            # 异步持久化
+            try:
+                cache_data = {}
+                for t, (vs, ts) in self._agg_cache.items():
+                    cache_data[t] = {'videos': vs, 'time': ts}
+                with open(self.AGG_CACHE_FILE, 'w', encoding='utf-8') as f:
+                    json.dump(cache_data, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+
         return videos
+
+    def _search_one_source_safe(self, keyword, source_code):
+        """安全版单源搜索，吞掉所有异常"""
+        try:
+            data = self._call_fn("search", {
+                "query": keyword, "source": source_code,
+                "area": "all", "type": "all", "year": "all",
+            })
+            if isinstance(data, dict):
+                return data.get("items", []) or []
+        except Exception:
+            pass
+        return []
 
     # ==================== 首页 ====================
 
@@ -429,7 +489,6 @@ class Spider(Spider):
         categories = [{"type_id": k, "type_name": v} for k, v in self.categories.items()]
         sections = self._home_sections()
 
-        # 从首页 sections 收集视频
         videos = []
         seen = set()
         for cat, items in sections.items():
@@ -441,19 +500,22 @@ class Spider(Spider):
                     seen.add(vod["vod_id"])
                     videos.append(vod)
 
-        # 用各分类搜索补充到60条
+        # 用各分类聚合搜索补充到60条
         if len(videos) < 60:
             try:
-                with ThreadPoolExecutor(max_workers=5) as pool:
+                with ThreadPoolExecutor(max_workers=3) as pool:
                     futures = {}
                     for cat_id in self.categories:
                         if len(videos) >= 60:
                             break
-                        futures[pool.submit(self._aggregate_by_category, cat_id, 60 - len(videos))] = cat_id
-                    for fut in as_completed(futures, timeout=40):
+                        futures[pool.submit(self._aggregate_by_category, cat_id, 60 - len(videos), False)] = cat_id
+                    for fut in as_completed(futures, timeout=50):
                         if len(videos) >= 60:
                             break
-                        extra = fut.result(timeout=8)
+                        try:
+                            extra = fut.result(timeout=15)
+                        except Exception:
+                            continue
                         if isinstance(extra, list):
                             for vod in extra:
                                 if vod["vod_id"] not in seen:
@@ -483,99 +545,67 @@ class Spider(Spider):
     # ==================== 筛选器 ====================
 
     def _build_filters(self):
-        """构建筛选器配置"""
         return {
             "movie": [
                 {"key": "area", "name": "地区", "value": [
                     {"n": "全部", "v": "all"},
-                    {"n": "内地", "v": "内地"},
-                    {"n": "香港", "v": "香港"},
-                    {"n": "台湾", "v": "台湾"},
-                    {"n": "美国", "v": "美国"},
-                    {"n": "日本", "v": "日本"},
-                    {"n": "韩国", "v": "韩国"},
-                    {"n": "印度", "v": "印度"},
-                    {"n": "欧洲", "v": "欧洲"},
+                    {"n": "内地", "v": "内地"}, {"n": "香港", "v": "香港"},
+                    {"n": "台湾", "v": "台湾"}, {"n": "美国", "v": "美国"},
+                    {"n": "日本", "v": "日本"}, {"n": "韩国", "v": "韩国"},
+                    {"n": "印度", "v": "印度"}, {"n": "欧洲", "v": "欧洲"},
                 ]},
                 {"key": "year", "name": "年份", "value": [
                     {"n": "全部", "v": "all"},
-                    {"n": "2025", "v": "2025"},
-                    {"n": "2024", "v": "2024"},
-                    {"n": "2023", "v": "2023"},
-                    {"n": "2022", "v": "2022"},
-                    {"n": "2021", "v": "2021"},
-                    {"n": "2020", "v": "2020"},
-                    {"n": "2019", "v": "2019"},
-                    {"n": "2018", "v": "2018"},
+                    {"n": "2025", "v": "2025"}, {"n": "2024", "v": "2024"},
+                    {"n": "2023", "v": "2023"}, {"n": "2022", "v": "2022"},
+                    {"n": "2021", "v": "2021"}, {"n": "2020", "v": "2020"},
                     {"n": "经典", "v": "classic"},
                 ]},
                 {"key": "letter", "name": "字母", "value": [
-                    {"n": "全部", "v": "all"},
-                    {"n": "A", "v": "A"}, {"n": "B", "v": "B"}, {"n": "C", "v": "C"},
-                    {"n": "D", "v": "D"}, {"n": "E", "v": "E"}, {"n": "F", "v": "F"},
-                    {"n": "G", "v": "G"}, {"n": "H", "v": "H"}, {"n": "I", "v": "I"},
-                    {"n": "J", "v": "J"}, {"n": "K", "v": "K"}, {"n": "L", "v": "L"},
-                    {"n": "M", "v": "M"}, {"n": "N", "v": "N"}, {"n": "O", "v": "O"},
-                    {"n": "P", "v": "P"}, {"n": "Q", "v": "Q"}, {"n": "R", "v": "R"},
-                    {"n": "S", "v": "S"}, {"n": "T", "v": "T"}, {"n": "U", "v": "U"},
-                    {"n": "V", "v": "V"}, {"n": "W", "v": "W"}, {"n": "X", "v": "X"},
-                    {"n": "Y", "v": "Y"}, {"n": "Z", "v": "Z"},
-                ]},
+                    {"n": "全部", "v": "all"}
+                ] + [{"n": chr(i), "v": chr(i)} for i in range(65, 91)]},
             ],
             "tv": [
                 {"key": "area", "name": "地区", "value": [
                     {"n": "全部", "v": "all"},
-                    {"n": "内地", "v": "内地"},
-                    {"n": "香港", "v": "香港"},
-                    {"n": "台湾", "v": "台湾"},
-                    {"n": "美国", "v": "美国"},
-                    {"n": "日本", "v": "日本"},
-                    {"n": "韩国", "v": "韩国"},
+                    {"n": "内地", "v": "内地"}, {"n": "香港", "v": "香港"},
+                    {"n": "台湾", "v": "台湾"}, {"n": "美国", "v": "美国"},
+                    {"n": "日本", "v": "日本"}, {"n": "韩国", "v": "韩国"},
                     {"n": "印度", "v": "印度"},
                 ]},
                 {"key": "year", "name": "年份", "value": [
                     {"n": "全部", "v": "all"},
-                    {"n": "2025", "v": "2025"},
-                    {"n": "2024", "v": "2024"},
-                    {"n": "2023", "v": "2023"},
-                    {"n": "2022", "v": "2022"},
-                    {"n": "2021", "v": "2021"},
-                    {"n": "2020", "v": "2020"},
+                    {"n": "2025", "v": "2025"}, {"n": "2024", "v": "2024"},
+                    {"n": "2023", "v": "2023"}, {"n": "2022", "v": "2022"},
+                    {"n": "2021", "v": "2021"}, {"n": "2020", "v": "2020"},
                     {"n": "经典", "v": "classic"},
                 ]},
             ],
             "short": [
                 {"key": "year", "name": "年份", "value": [
                     {"n": "全部", "v": "all"},
-                    {"n": "2025", "v": "2025"},
-                    {"n": "2024", "v": "2024"},
-                    {"n": "2023", "v": "2023"},
-                    {"n": "2022", "v": "2022"},
+                    {"n": "2025", "v": "2025"}, {"n": "2024", "v": "2024"},
+                    {"n": "2023", "v": "2023"}, {"n": "2022", "v": "2022"},
                     {"n": "经典", "v": "classic"},
                 ]},
             ],
             "variety": [
                 {"key": "year", "name": "年份", "value": [
                     {"n": "全部", "v": "all"},
-                    {"n": "2025", "v": "2025"},
-                    {"n": "2024", "v": "2024"},
-                    {"n": "2023", "v": "2023"},
-                    {"n": "经典", "v": "classic"},
+                    {"n": "2025", "v": "2025"}, {"n": "2024", "v": "2024"},
+                    {"n": "2023", "v": "2023"}, {"n": "经典", "v": "classic"},
                 ]},
             ],
             "anime": [
                 {"key": "area", "name": "地区", "value": [
                     {"n": "全部", "v": "all"},
-                    {"n": "日本", "v": "日本"},
-                    {"n": "美国", "v": "美国"},
+                    {"n": "日本", "v": "日本"}, {"n": "美国", "v": "美国"},
                     {"n": "内地", "v": "内地"},
                 ]},
                 {"key": "year", "name": "年份", "value": [
                     {"n": "全部", "v": "all"},
-                    {"n": "2025", "v": "2025"},
-                    {"n": "2024", "v": "2024"},
-                    {"n": "2023", "v": "2023"},
-                    {"n": "经典", "v": "classic"},
+                    {"n": "2025", "v": "2025"}, {"n": "2024", "v": "2024"},
+                    {"n": "2023", "v": "2023"}, {"n": "经典", "v": "classic"},
                 ]},
             ],
         }
@@ -588,7 +618,7 @@ class Spider(Spider):
         videos = []
         seen = set()
 
-        # 1. 从首页 sections 取该分类的固定内容
+        # 1. 从首页 sections 取该分类的固定内容（快速，不触发网络）
         sections = self._home_sections()
         items = sections.get(tid, []) if isinstance(sections, dict) else []
         if isinstance(items, list):
@@ -598,12 +628,29 @@ class Spider(Spider):
                     seen.add(vod["vod_id"])
                     videos.append(vod)
 
-        # 2. 通过关键词+多源搜索补充更多资源
-        extra_videos = self._aggregate_by_category(tid, limit * 3)
-        for vod in extra_videos:
-            if vod["vod_id"] not in seen:
-                seen.add(vod["vod_id"])
-                videos.append(vod)
+        # 2. 使用缓存的聚合结果（有缓存直接分页，无缓存则触发聚合）
+        #    先检查内存缓存
+        cached_videos = None
+        if tid in self._agg_cache:
+            cached_videos, _ = self._agg_cache[tid]
+            if time.time() - _ < self._agg_cache_ttl:
+                pass  # 使用缓存
+            else:
+                cached_videos = None
+
+        if cached_videos is None:
+            # 缓存未命中，触发聚合（最多取 limit*3 条）
+            extra_videos = self._aggregate_by_category(tid, limit * 3, use_cache=True)
+            for vod in extra_videos:
+                if vod["vod_id"] not in seen:
+                    seen.add(vod["vod_id"])
+                    videos.append(vod)
+        else:
+            # 使用缓存
+            for vod in cached_videos:
+                if vod["vod_id"] not in seen:
+                    seen.add(vod["vod_id"])
+                    videos.append(vod)
 
         # 3. 应用筛选器
         if extend:
@@ -614,8 +661,9 @@ class Spider(Spider):
                 filtered = []
                 for vod in videos:
                     match = True
-                    if area != "all" and vod.get("vod_area") and area not in vod.get("vod_area", ""):
-                        match = False
+                    if area != "all" and vod.get("vod_area"):
+                        if area not in vod.get("vod_area", ""):
+                            match = False
                     if year != "all" and year != "classic":
                         vy = vod.get("vod_year", "")
                         if vy and vy != year:
@@ -655,20 +703,35 @@ class Spider(Spider):
         limit = 30
         if not key:
             return {"list": []}
-        # 逐源聚合搜索
+
+        # 逐源聚合搜索（每次搜索都重新请求，因为关键词不同）
         sources = self.get_sources()
         source_codes = [s.get("source") for s in sources if s.get("source")]
         all_items = []
+        seen_keys = set()
+
         try:
-            with ThreadPoolExecutor(max_workers=5) as pool:
-                futures = {pool.submit(self._search_one_source, sc, key): sc for sc in source_codes}
-                for fut in as_completed(futures, timeout=20):
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                futures = {}
+                for sc in source_codes:
+                    futures[pool.submit(self._search_one_source, sc, key)] = sc
+                for fut in as_completed(futures, timeout=25):
                     try:
-                        items = fut.result(timeout=8)
+                        items = fut.result(timeout=10)
                     except Exception:
-                        items = []
-                    if items:
-                        all_items.extend(items)
+                        continue
+                    if not isinstance(items, list):
+                        continue
+                    for item in items:
+                        if not isinstance(item, dict):
+                            continue
+                        t = (item.get("title") or "").strip()
+                        y = str(item.get("year") or "").strip()
+                        k = (t, y)
+                        if not t or k in seen_keys:
+                            continue
+                        seen_keys.add(k)
+                        all_items.append(item)
         except Exception:
             for sc in source_codes:
                 try:
@@ -678,33 +741,28 @@ class Spider(Spider):
                 except Exception:
                     continue
 
-        videos = []
-        seen = set()
+        # 排序：有海报的优先，按评分排序
         all_items.sort(key=lambda it: (
             0 if (isinstance(it, dict) and it.get("poster")) else 1,
             -float(it["score"]) if isinstance(it, dict) and self._safe_float(it.get("score")) else 0,
         ))
+
+        # 本地分页：收集所有结果再切片
+        videos = []
         for item in all_items:
-            if not isinstance(item, dict):
-                continue
-            t = (item.get("title") or "").strip()
-            y = str(item.get("year") or "").strip()
-            k = (t, y)
-            if not t or k in seen:
-                continue
-            seen.add(k)
             vod = self._item_to_vod(item)
             if vod:
                 videos.append(vod)
-            if len(videos) >= limit:
-                break
 
+        total = len(videos)
+        start = (page - 1) * limit
+        end = start + limit
         return {
-            "list": videos,
+            "list": videos[start:end],
             "page": page,
-            "pagecount": 1,
+            "pagecount": max(1, (total + limit - 1) // limit),
             "limit": limit,
-            "total": len(videos),
+            "total": total,
         }
 
     @staticmethod
@@ -778,7 +836,7 @@ class Spider(Spider):
         alternatives = data.get("alternatives") or []
         if isinstance(alternatives, list) and alternatives:
             try:
-                with ThreadPoolExecutor(max_workers=5) as pool:
+                with ThreadPoolExecutor(max_workers=4) as pool:
                     futs = {}
                     for alt in alternatives:
                         if not isinstance(alt, dict):
