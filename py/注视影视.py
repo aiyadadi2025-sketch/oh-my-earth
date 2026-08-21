@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# 注视影视 (gaze.red) 修复版 —— 分类无内容修复 + 动态验证码全自动
+# 注视影视 (gaze.red) 修复版 —— 分类内容显示修复
 import re
 import base64
 import json
@@ -29,7 +29,7 @@ class Spider(Spider):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "zh-CN,zh;q=0.9",
         }
-        self._auth_header = 'X-' + base64.b64decode('YURhaUpuYUgtbmF1aGNpUy1nbm9naVo=').decode('utf-8')
+        self._auth_header = 'X-' + base64.b64decode('YURhaUpuYUgtbmF1Y2hpUy1nbm9naVo=').decode('utf-8')
         self._seal = ""
         self._seal_expire = 0
         self._extra_headers = {}  # 存储动态额外 header（如 Canvas 指纹）
@@ -65,6 +65,8 @@ class Spider(Spider):
         ]
         self.filters = {item["type_id"]: common for item in self.classes}
         self.ready = False
+        self._fp_header_name = ""
+        self._fp_header_value = ""
 
     # ---------- 核心：动态验证参数获取（纯 Python 版） ----------
     def _warm(self, force=False):
@@ -84,34 +86,77 @@ class Spider(Spider):
             )
             text = r.text
 
-            # 1. 提取 Domh (动态 header 名)
-            m = re.search(r"const Domh\s*=\s*['\"]([^'\"]+)['\"]\s*\+\s*window\.atob\(['\"]([^'\"]+)['\"]\)", text)
+            # 1. 提取 Domh (动态 header 名) - XOR 解密
+            m = re.search(r'const\s+(\w+)=atob\("([^"]+)"\),(\w+)=atob\("([^"]+)"\)', text)
             if m:
-                domh = m.group(1) + base64.b64decode(m.group(2)).decode('utf-8')
+                b1 = base64.b64decode(m.group(2))
+                b2 = base64.b64decode(m.group(4))
+                domh = ''.join(chr(b1[i] ^ b2[i]) for i in range(len(b1)))
                 self._auth_header = domh
 
-            # 2. 提取 Domi (属性名) 和 seal (属性值)
-            m2 = re.search(r"const Domi\s*=\s*['\"](data-v-[a-f0-9]+)['\"]", text)
-            if m2:
-                domi = m2.group(1)
-                # 在页面中寻找 Domi 作为属性名的元素，其值即为 seal
-                pat = rf'{re.escape(domi)}\s*=\s*["\']([^"\']+)["\']'
-                m3 = re.search(pat, text)
-                if m3:
-                    self._seal = m3.group(1)
-                    self._seal_expire = time.time() + 240
+            # 2. 提取 seal (时间戳认证)
+            m = re.search(r'(\w+)\s*=\s*"(\d+\.\w+\.\w+)"', text)
+            if m:
+                self._seal = m.group(2)
+                self._seal_expire = time.time() + 240
 
-            # 3. 尝试提取 Canvas 指纹相关的额外 header（从 script 中推断）
-            #    实际网站可能使用一个随机 canvas 哈希，我们通过固定模拟降低拦截概率
-            #    如果无法获取，则使用一个固定占位值（可接受）
-            self._extra_headers = {}
-            # 尝试从页面中的 Image 或 canvas 相关 JS 提取参数（此处简化，使用常见值）
-            # 但大多数情况下，只要 seal 和 Domh 正确，即可正常请求
+            # 3. Canvas 指纹暂不支持纯 Python 计算，跳过
+            self._fp_header_name = ""
+            self._fp_header_value = ""
+
             self.ready = True
 
         except Exception as e:
             # 出错时保留旧值，等待下次尝试
             self.ready = False
+
+    def _extract_canvas_fingerprint(self, text):
+        """从页面 JS 中提取并计算 Canvas 指纹 header"""
+        try:
+            # 查找 canvas 指纹计算函数
+            func_match = re.search(r'function\s+(\w+)\(\)\{[\s\S]*?_tAwq66FXb2X=_W1W0mZCW;', text)
+            if not func_match:
+                # 尝试另一种模式
+                func_match = re.search(r'function\s+(\w+)\(\)\{[\s\S]*?_YXvNoOMEVgM=_RN4liOO2;', text)
+
+            if func_match:
+                func_name = func_match.group(1)
+                # 提取函数内容
+                func_start = text.find(f'function {func_name}()')
+                if func_start >= 0:
+                    # 找到函数结束
+                    depth = 0
+                    for i, c in enumerate(text[func_start:]):
+                        if c == '{':
+                            depth += 1
+                        elif c == '}':
+                            depth -= 1
+                            if depth == 0:
+                                func_body = text[func_start:func_start + i + 1]
+                                # 提取所有 atob 值
+                                atob_values = re.findall(r'atob\("([^"]+)"\)', func_body)
+                                if len(atob_values) >= 16:
+                                    # 解码所有 atob 值
+                                    decoded = [base64.b64decode(v) for v in atob_values]
+
+                                    # 提取 BMP 图片
+                                    img_match = re.search(r'src="data:image/bmp;base64,([A-Za-z0-9+/=]+)"', text)
+                                    if img_match:
+                                        img_b64 = img_match.group(1)
+                                        img_data = base64.b64decode(img_b64)
+                                        # 解析 BMP 并计算指纹
+                                        fp = self._compute_fingerprint(img_data, decoded)
+                                        if fp:
+                                            self._fp_header_name = fp[0]
+                                            self._fp_header_value = fp[1]
+        except Exception:
+            pass
+
+    def _compute_fingerprint(self, img_data, decoded_arrays):
+        """计算 Canvas 指纹 - 暂不支持纯 Python 实现"""
+        # Canvas 指纹需要浏览器环境，纯 Python 无法模拟
+        # 使用 seal header 作为主要验证方式
+        return None
 
     # ---------- API 请求 ----------
     def _api(self, page=1, mform="all", mcountry="all", tag="all", years="all", sort="updatetime", title=""):
@@ -138,8 +183,8 @@ class Spider(Spider):
         }
         if self._seal:
             req_headers[self._auth_header] = self._seal
-        if self._extra_headers:
-            req_headers.update(self._extra_headers)
+        if self._fp_header_name and self._fp_header_value:
+            req_headers[self._fp_header_name] = self._fp_header_value
 
         try:
             response = self.session.post(
@@ -156,8 +201,8 @@ class Spider(Spider):
                 self._warm(force=True)
                 if self._seal:
                     req_headers[self._auth_header] = self._seal
-                    if self._extra_headers:
-                        req_headers.update(self._extra_headers)
+                    if self._fp_header_name:
+                        req_headers[self._fp_header_name] = self._fp_header_value
                     response = self.session.post(
                         self.host + "/filter_movielist",
                         data=data,
@@ -285,7 +330,7 @@ class Spider(Spider):
             click = f"(()=>{{let n=0,t=setInterval(()=>{{const b=document.querySelectorAll('.playbtn')[{index}];if(b&&typeof IwasKing==='function'){{clearInterval(t);b.click();}}else if(++n>200)clearInterval(t);}},100);}})()"
         else:
             safe_path = path.replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"')
-            click = f"(()=>{{let n=0,t=setInterval(()=>{{const b=document.querySelector('.playbtn[data-path=\\\"{safe_path}\\\"]')||document.querySelector('.playbtn[data-path=\\\'{safe_path}\\\']');if(b&&typeof IwasKing==='function'){{clearInterval(t);b.click();}}else if(++n>200)clearInterval(t);}},100);}})()"
+            click = "(()=>{let n=0,t=setInterval(()=>{const b=document.querySelector('.playbtn[data-path=\"\""+safe_path+"\"\")])||document.querySelector('.playbtn[data-path='\''"+safe_path+"'\''');if(b&&typeof IwasKing==='function'){clearInterval(t);b.click();}else if(++n>200)clearInterval(t);},100);})()"
 
         return {
             "parse": 1,
