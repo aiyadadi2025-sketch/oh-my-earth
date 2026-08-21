@@ -12,15 +12,6 @@
       "quickSearch": 1,
       "filterable": 1,
       "changeable": 1
-    },{
-      "key": "zip",
-      "name": "🥇zip｜影视",
-      "type": 3,
-      "api": "./py/zip.py",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "changeable": 1
     },
     {
       "key": "咕噜",
