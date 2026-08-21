@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-# 注视影视 (gaze.red) 修复版 —— 分类内容显示修复
+# 注视影视 (gaze.red) 修复版 —— 使用 Node.js 计算 Canvas 指纹
 import re
 import base64
 import json
 import time
+import subprocess
+import os
 from datetime import datetime
 from urllib.parse import urljoin
 
@@ -32,7 +34,8 @@ class Spider(Spider):
         self._auth_header = 'X-' + base64.b64decode('YURhaUpuYUgtbmF1Y2hpUy1nbm9naVo=').decode('utf-8')
         self._seal = ""
         self._seal_expire = 0
-        self._extra_headers = {}  # 存储动态额外 header（如 Canvas 指纹）
+        self._fp_header_name = ""
+        self._fp_header_value = ""
 
         # 分类配置
         self.classes = [
@@ -42,7 +45,7 @@ class Spider(Spider):
             {"type_id": "chinese_cartoon", "type_name": "国漫"}
         ]
 
-        # 筛选器（地区、类型、年份、排序）
+        # 筛选器
         countries = [("全部", "all"), ("中国大陆", "1"), ("中国台湾", "2"), ("中国香港", "3"), ("韩国", "4"), ("俄罗斯", "5"),
                      ("美国", "6"), ("日本", "7"), ("印度", "8"), ("英国", "9"), ("德国", "10"), ("法国", "11"), ("意大利", "12"),
                      ("泰国", "13"), ("西班牙", "16"), ("巴西", "18"), ("澳大利亚", "19"), ("丹麦", "20"), ("瑞典", "21"),
@@ -54,23 +57,16 @@ class Spider(Spider):
         sorts = [("最近更新", "updatetime"), ("最近添加", "createtime"), ("评分最高", "grade"), ("名称排序", "name"),
                  ("默认排序", "default")]
         common = [
-            {"key": "mcountry", "name": "地区",
-             "value": [{"n": n, "v": v} for n, v in countries]},
-            {"key": "tag", "name": "类型",
-             "value": [{"n": n, "v": v} for n, v in tags]},
-            {"key": "years", "name": "年份",
-             "value": [{"n": n, "v": v} for n, v in years]},
-            {"key": "sort", "name": "排序",
-             "value": [{"n": n, "v": v} for n, v in sorts]}
+            {"key": "mcountry", "name": "地区", "value": [{"n": n, "v": v} for n, v in countries]},
+            {"key": "tag", "name": "类型", "value": [{"n": n, "v": v} for n, v in tags]},
+            {"key": "years", "name": "年份", "value": [{"n": n, "v": v} for n, v in years]},
+            {"key": "sort", "name": "排序", "value": [{"n": n, "v": v} for n, v in sorts]}
         ]
         self.filters = {item["type_id"]: common for item in self.classes}
         self.ready = False
-        self._fp_header_name = ""
-        self._fp_header_value = ""
 
-    # ---------- 核心：动态验证参数获取（纯 Python 版） ----------
     def _warm(self, force=False):
-        """访问首页，提取 Domh、Domi、seal，并尽可能模拟 Canvas 指纹"""
+        """访问首页，提取验证参数并计算 Canvas 指纹"""
         if self.ready and not force and time.time() < self._seal_expire:
             return
 
@@ -86,92 +82,148 @@ class Spider(Spider):
             )
             text = r.text
 
-            # 1. 提取 Domh (动态 header 名) - XOR 解密
-            m = re.search(r'const\s+(\w+)=atob\("([^"]+)"\),(\w+)=atob\("([^"]+)"\)', text)
-            if m:
-                b1 = base64.b64decode(m.group(2))
-                b2 = base64.b64decode(m.group(4))
-                domh = ''.join(chr(b1[i] ^ b2[i]) for i in range(len(b1)))
-                self._auth_header = domh
-
-            # 2. 提取 seal (时间戳认证)
+            # 1. 提取 seal (时间戳认证)
             m = re.search(r'(\w+)\s*=\s*"(\d+\.\w+\.\w+)"', text)
             if m:
                 self._seal = m.group(2)
                 self._seal_expire = time.time() + 240
 
-            # 3. Canvas 指纹暂不支持纯 Python 计算，跳过
-            self._fp_header_name = ""
-            self._fp_header_value = ""
+            # 2. 提取 header 名
+            m = re.search(r'const\s+\w+=atob\("([^"]+)"\),\w+=atob\("([^"]+)"\)', text)
+            if m:
+                b1 = base64.b64decode(m.group(1))
+                b2 = base64.b64decode(m.group(2))
+                self._auth_header = ''.join(chr(b1[i] ^ b2[i]) for i in range(len(b1)))
+
+            # 3. 计算 Canvas 指纹
+            self._compute_fingerprint(text)
 
             self.ready = True
 
         except Exception as e:
-            # 出错时保留旧值，等待下次尝试
             self.ready = False
 
-    def _extract_canvas_fingerprint(self, text):
-        """从页面 JS 中提取并计算 Canvas 指纹 header"""
+    def _compute_fingerprint(self, html):
+        """使用 Node.js 计算 Canvas 指纹"""
         try:
-            # 查找 canvas 指纹计算函数
-            func_match = re.search(r'function\s+(\w+)\(\)\{[\s\S]*?_tAwq66FXb2X=_W1W0mZCW;', text)
+            # 提取 BMP 图片
+            img_match = re.search(r'src="data:image/bmp;base64,([A-Za-z0-9+/=]+)"', html)
+            if not img_match:
+                return
+
+            img_b64 = img_match.group(1)
+            img_data = base64.b64decode(img_b64)
+
+            # 提取 canvas 指纹计算函数
+            func_match = re.search(r'function\s+\w+\(\)\{[\s\S]*?_HAkBgIvX3Niw=', html)
             if not func_match:
-                # 尝试另一种模式
-                func_match = re.search(r'function\s+(\w+)\(\)\{[\s\S]*?_YXvNoOMEVgM=_RN4liOO2;', text)
+                return
 
-            if func_match:
-                func_name = func_match.group(1)
-                # 提取函数内容
-                func_start = text.find(f'function {func_name}()')
-                if func_start >= 0:
-                    # 找到函数结束
-                    depth = 0
-                    for i, c in enumerate(text[func_start:]):
-                        if c == '{':
-                            depth += 1
-                        elif c == '}':
-                            depth -= 1
-                            if depth == 0:
-                                func_body = text[func_start:func_start + i + 1]
-                                # 提取所有 atob 值
-                                atob_values = re.findall(r'atob\("([^"]+)"\)', func_body)
-                                if len(atob_values) >= 16:
-                                    # 解码所有 atob 值
-                                    decoded = [base64.b64decode(v) for v in atob_values]
+            func_start = html.find('function ')
+            if func_start < 0:
+                return
 
-                                    # 提取 BMP 图片
-                                    img_match = re.search(r'src="data:image/bmp;base64,([A-Za-z0-9+/=]+)"', text)
-                                    if img_match:
-                                        img_b64 = img_match.group(1)
-                                        img_data = base64.b64decode(img_b64)
-                                        # 解析 BMP 并计算指纹
-                                        fp = self._compute_fingerprint(img_data, decoded)
-                                        if fp:
-                                            self._fp_header_name = fp[0]
-                                            self._fp_header_value = fp[1]
-        except Exception:
+            # 找到函数结束
+            depth = 0
+            for i, c in enumerate(html[func_start:]):
+                if c == '{':
+                    depth += 1
+                elif c == '}':
+                    depth -= 1
+                    if depth == 0:
+                        func = html[func_start:func_start + i + 1]
+                        break
+            else:
+                return
+
+            # 创建 Node.js 脚本
+            script = f'''
+const fs = require('fs');
+
+// BMP 数据
+const bmpData = Buffer.from('{img_b64}', 'base64');
+
+// 像素数据 (10x10 RGBA)
+const imageData = new Uint8Array(400);
+const offset = 54;
+const rowSize = 32;
+for (let y = 0; y < 10; y++) {{
+    for (let x = 0; x < 10; x++) {{
+        const dstIdx = (y * 10 + x) * 4;
+        const srcIdx = offset + (9 - y) * rowSize + x * 3;
+        imageData[dstIdx] = bmpData[srcIdx];
+        imageData[dstIdx + 1] = bmpData[srcIdx + 1];
+        imageData[dstIdx + 2] = bmpData[srcIdx + 2];
+        imageData[dstIdx + 3] = 255;
+    }}
+}}
+
+// atob 解码
+function atob(str) {{
+    return Uint8Array.from(Buffer.from(str, 'base64'));
+}}
+
+// 执行指纹计算函数
+{func}
+
+// 输出结果
+console.log(JSON.stringify({{_HAkBgIvX3Niw}}));
+'''
+
+            # 写入临时文件
+            script_path = os.path.join(os.environ.get('TEMP', '/tmp'), 'gaze_fp.js')
+            with open(script_path, 'w', encoding='utf-8') as f:
+                f.write(script)
+
+            # 运行 Node.js
+            result = subprocess.run(
+                ['node', script_path],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            if result.returncode == 0:
+                try:
+                    fp_data = json.loads(result.stdout.strip())
+                    key = list(fp_data.keys())[0]
+                    self._fp_header_name = fp_data[key].get('13930^13930' if '13930' in str(fp_data[key]) else list(fp_data[key].keys())[0], '')
+                    self._fp_header_value = fp_data[key].get('41039^41038' if '41039' in str(fp_data[key]) else list(fp_data[key].values())[0], '')
+
+                    # 简化处理：直接解析 JSON
+                    if isinstance(fp_data, dict):
+                        for k, v in fp_data.items():
+                            if isinstance(v, dict):
+                                for kk, vv in v.items():
+                                    if isinstance(kk, int) and isinstance(vv, str):
+                                        self._fp_header_name = vv
+                                    elif isinstance(vv, str) and len(vv) > 10:
+                                        self._fp_header_value = vv
+                except:
+                    pass
+
+            # 清理临时文件
+            try:
+                os.remove(script_path)
+            except:
+                pass
+
+        except Exception as e:
             pass
 
-    def _compute_fingerprint(self, img_data, decoded_arrays):
-        """计算 Canvas 指纹 - 暂不支持纯 Python 实现"""
-        # Canvas 指纹需要浏览器环境，纯 Python 无法模拟
-        # 使用 seal header 作为主要验证方式
-        return None
-
-    # ---------- API 请求 ----------
     def _api(self, page=1, mform="all", mcountry="all", tag="all", years="all", sort="updatetime", title=""):
         self._warm()
-        data = [
-            ("mform", mform or "all"),
-            ("mcountry", mcountry or "all"),
-            ("page", str(page)),
-            ("sort", sort or "updatetime"),
-            ("album", "all"),
-            ("title", title or ""),
-            ("years", years or "all")
-        ]
+        data = {
+            "mform": mform or "all",
+            "mcountry": mcountry or "all",
+            "page": str(page),
+            "sort": sort or "updatetime",
+            "album": "all",
+            "title": title or "",
+            "years": years or "all"
+        }
         if tag and tag != "all":
-            data.append(("tag_arr[]", tag))
+            data["genre_arr"] = [tag]
 
         req_headers = {
             "User-Agent": self.headers["User-Agent"],
@@ -214,7 +266,6 @@ class Spider(Spider):
         except Exception:
             return {}
 
-    # ---------- 解析视频列表 ----------
     def _videos(self, data):
         result, seen = [], set()
         for item in data.get("mlist") or []:
@@ -230,7 +281,6 @@ class Spider(Spider):
             })
         return result
 
-    # ---------- 工具函数 ----------
     def _get(self, url):
         try:
             response = self.session.get(
@@ -247,7 +297,6 @@ class Spider(Spider):
     def _fix_url(self, url):
         return urljoin(self.host + "/", url or "")
 
-    # ---------- 首页 ----------
     def homeContent(self, filter):
         return {
             "class": self.classes,
@@ -255,7 +304,6 @@ class Spider(Spider):
             "filters": self.filters
         }
 
-    # ---------- 分类 ----------
     def categoryContent(self, tid, pg, filter, extend):
         page = max(1, int(pg or 1))
         ext = extend if isinstance(extend, dict) else {}
@@ -277,7 +325,6 @@ class Spider(Spider):
             "list": videos
         }
 
-    # ---------- 详情 ----------
     def detailContent(self, ids):
         result = []
         for vid in ids:
@@ -308,7 +355,6 @@ class Spider(Spider):
             })
         return {"list": result}
 
-    # ---------- 搜索 ----------
     def searchContent(self, key, quick, pg="1"):
         page = max(1, int(pg or 1))
         data = self._api(page=page, title=key)
@@ -318,7 +364,6 @@ class Spider(Spider):
             "list": self._videos(data)
         }
 
-    # ---------- 播放 ----------
     def playerContent(self, flag, id, vipFlags):
         parts = str(id).split("@@", 1)
         vid = parts[0]
@@ -330,7 +375,7 @@ class Spider(Spider):
             click = f"(()=>{{let n=0,t=setInterval(()=>{{const b=document.querySelectorAll('.playbtn')[{index}];if(b&&typeof IwasKing==='function'){{clearInterval(t);b.click();}}else if(++n>200)clearInterval(t);}},100);}})()"
         else:
             safe_path = path.replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"')
-            click = "(()=>{let n=0,t=setInterval(()=>{const b=document.querySelector('.playbtn[data-path=\"\""+safe_path+"\"\")])||document.querySelector('.playbtn[data-path='\''"+safe_path+"'\''');if(b&&typeof IwasKing==='function'){clearInterval(t);b.click();}else if(++n>200)clearInterval(t);},100);})()"
+            click = f'(()=>{{let n=0,t=setInterval(()=>{{const b=document.querySelector(\'.playbtn[data-path="{safe_path}"]\')||document.querySelector(\'.playbtn[data-path=\'{safe_path}\']\');if(b&&typeof IwasKing===\'function\'){{clearInterval(t);b.click();}}else if(++n>200)clearInterval(t);}},100);}})()'
 
         return {
             "parse": 1,
@@ -343,7 +388,6 @@ class Spider(Spider):
             }
         }
 
-    # ---------- localProxy (可选，用于 JS 注入获取额外 header，已废弃纯 Python 版可不用) ----------
     def localProxy(self, param):
         return [200, {}, '']
 
@@ -353,4 +397,6 @@ if __name__ == "__main__":
     s = Spider()
     s.init()
     print("分类：", s.homeContent(False)["class"])
-    print("电影分类第1页：", s.categoryContent("movie", 1, {}, {})["list"][:2])
+    result = s.categoryContent("movie", 1, {}, {})
+    print("电影分类第1页：", result["list"][:2])
+    print("总数：", result["total"])
