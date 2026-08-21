@@ -23,6 +23,16 @@
       "changeable": 1
     },
     {
+      "key": "咕噜",
+      "name": "🥇咕噜｜影视",
+      "type": 3,
+      "api": "./py/咕噜.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
       "key": "山楂影视",
       "name": "🥇山楂｜影视",
       "type": 3,
