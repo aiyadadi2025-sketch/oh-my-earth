@@ -24,10 +24,10 @@
       "changeable": 1
     },
     {
-      "key": "注视影视",
-      "name": "🥇注视｜影视",
+      "key": "网飞",
+      "name": "🥇网飞｜影视",
       "type": 3,
-      "api": "./py/注视影视.py",
+      "api": "./py/网飞.py",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
