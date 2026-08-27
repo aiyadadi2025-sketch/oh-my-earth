@@ -375,6 +375,16 @@
       "ext": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/XYQHiker/电影港.json"
     },
     {
+      "key": "4k剧下饭",
+      "name": "💯4k剧下饭｜APP",
+      "type": 3,
+      "api": "./py/剧下饭4K直播秒播版.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
       "key": "4k电影网2",
       "name": "💯4k电影网2｜影视",
       "type": 3,
