@@ -199,7 +199,7 @@ class Spider(Spider):
         return resp.json()
 
     def homeContent(self, filter):
-        data=self.Req("/api/category/top",{},1)
+        data = self.Req("/api/category/top", {}, 1)
         result = {}
         classes = []
         for k in data['data']:
@@ -207,20 +207,37 @@ class Spider(Spider):
                 'type_name': k['name'],
                 'type_id': k['id']
             })
-            # fil = []
-            # resp=self.Req("/api/film/category/filter",{'categoryId':k['id']},1)
-            # for i,v in resp['data'].items():
-            #     if not isinstance(v,list) or len(v)==0 or i=='sortOptions':continue
-            #     fil.append({
-            #         'key': i,
-            #         'name': i,
-            #         'value': [{'n':x,'v':x} for x in v]
-            #     })
-            # fil.append(self.ddd)
-            # filters[k['id']] = fil
+        try:
+            filters_resp = self.fetch("http://mytv6688.xyz/pyplugin/木兮筛选.json")
+            result['filters'] = filters_resp.json()
+        except Exception:
+            result['filters'] = self._get_default_filters()
         result['class'] = classes
-        result['filters'] = self.fetch("http://mytv6688.xyz/pyplugin/木兮筛选.json").json()
         return result
+
+    def _get_default_filters(self):
+        return {
+            "1": [{"key": "areaOptions", "name": "地区", "value": []},
+                  {"key": "languageOptions", "name": "语言", "value": []},
+                  {"key": "sortOptions", "name": "排序", "value": []},
+                  {"key": "yearOptions", "name": "年份", "value": []}],
+            "2": [{"key": "areaOptions", "name": "地区", "value": []},
+                  {"key": "languageOptions", "name": "语言", "value": []},
+                  {"key": "sortOptions", "name": "排序", "value": []},
+                  {"key": "yearOptions", "name": "年份", "value": []}],
+            "3": [{"key": "areaOptions", "name": "地区", "value": []},
+                  {"key": "languageOptions", "name": "语言", "value": []},
+                  {"key": "sortOptions", "name": "排序", "value": []},
+                  {"key": "yearOptions", "name": "年份", "value": []}],
+            "4": [{"key": "areaOptions", "name": "地区", "value": []},
+                  {"key": "languageOptions", "name": "语言", "value": []},
+                  {"key": "sortOptions", "name": "排序", "value": []},
+                  {"key": "yearOptions", "name": "年份", "value": []}],
+            "5": [{"key": "areaOptions", "name": "地区", "value": []},
+                  {"key": "languageOptions", "name": "语言", "value": []},
+                  {"key": "sortOptions", "name": "排序", "value": []},
+                  {"key": "yearOptions", "name": "年份", "value": []}]
+        }
 
     def homeVideoContent(self):
         data=self.Req("/api/poster/list",{},1)
