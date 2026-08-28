@@ -138,12 +138,15 @@ class Spider(Spider):
         }
         if self.Token:
             header['X-Verify-Token'] = self.Token
-        config = self._get_config()
-        report_id = config.get('reportId', 'X-Report-Id')
+        try:
+            config = self._get_config()
+            report_id = config.get('reportId', 'X-Report-Id')
+        except Exception:
+            report_id = 'X-Report-Id'
         if end:
             header[report_id] = signature
         else:
-            header[report_id] = self._gen_web_sig(path, timestamp, config)
+            header[report_id] = self._gen_web_sig(path, timestamp, config if 'config' in dir() else {'session': ''})
         return header
 
     def _gen_web_sig(self, path, timestamp, config):
@@ -228,10 +231,14 @@ class Spider(Spider):
         return jd
 
     def homeContent(self, filter):
-        data = self.Req("/api/category/top", {}, 1)
+        try:
+            data = self.Req("/api/category/top", {}, 1)
+        except Exception as e:
+            print(f"获取分类失败: {e}")
+            return {'class': [], 'filters': {}}
         result = {}
         classes = []
-        for k in data['data']:
+        for k in data.get('data', []):
             classes.append({
                 'type_name': k['name'],
                 'type_id': k['id']
