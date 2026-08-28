@@ -24,16 +24,6 @@
       "changeable": 1
     },
     {
-      "key": "柚子",
-      "name": "🥇柚子｜影视",
-      "type": 3,
-      "api": "./py/柚子pj会员.py",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "changeable": 1
-    },
-    {
       "key": "咕噜",
       "name": "🥇咕噜｜影视",
       "type": 3,
