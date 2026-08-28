@@ -14,6 +14,17 @@
       "changeable": 1
     },
     {
+      "key": "红果短剧",
+      "name": "🥇红果｜影视",
+      "type": 3,
+      "api": "./py/hongguo_spider.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1,
+      "ext": "./py/hongguo_filter.json"
+    },
+    {
       "key": "咕噜",
       "name": "🥇咕噜｜影视",
       "type": 3,
