@@ -48,6 +48,7 @@ class Spider(Spider):
     STATIC_BASE = "https://static.geetest.com/"
     VERIFY_HOST = 'https://gcaptcha4.geetest.com'
     ClientId=MD5.new(str(int(time.time())).encode()).hexdigest();Token=''
+    _config_cache = {}
 
     def rsa_encrypt(self,random_key):
         pub_key = RSA.construct((int(self.RSA_N, 16), self.RSA_E))
@@ -96,7 +97,22 @@ class Spider(Spider):
         check_digit = digit_sum % 10
         return prefix + str(check_digit)
 
-    def get_site_headers(self,path, end=0):
+    def _get_config(self):
+        if not self._config_cache:
+            try:
+                h = self.get_site_headers('/category/top', 1)
+                r = self.session.get(f'{self.host}/api/system/config', headers=h, timeout=10)
+                d = r.json().get('data', {})
+                self._config_cache = {
+                    'session': d.get('session', ''),
+                    'reportId': d.get('reportId', 'X-Report-Id'),
+                    'traceId': d.get('traceId', ''),
+                }
+            except Exception:
+                self._config_cache = {'session': '', 'reportId': 'X-Report-Id', 'traceId': ''}
+        return self._config_cache
+
+    def get_site_headers(self, path, end=0):
         secret_key = "lslx_sk"
         timestamp = self.generate_checksum_timestamp()
         raw_data = f"{timestamp}symx_{secret_key}{path}"
@@ -117,86 +133,99 @@ class Spider(Spider):
             'X-Platform': 'android',
             'X-Timestamp': timestamp,
             'X-Sign-X': signature,
-            'X-Client-Id':self.ClientId,
+            'X-Client-Id': self.ClientId,
             'Referer': 'https://film.symx.club/',
         }
-        if self.Token: header['X-Verify-Token'] = self.Token
+        if self.Token:
+            header['X-Verify-Token'] = self.Token
+        config = self._get_config()
+        report_id = config.get('reportId', 'X-Report-Id')
         if end:
-            del header['X-Sign-X']
-            header['X-Report-Id'] = signature
+            header[report_id] = signature
+        else:
+            header[report_id] = self._gen_web_sig(path, timestamp, config)
         return header
 
-    def run_verify(self,i=0):
-        if i>3: return
+    def _gen_web_sig(self, path, timestamp, config):
+        session_key = config.get('session', '')
+        trace_id = config.get('trace_id', '')
+        raw = f"{timestamp}symx_{session_key}{path}"
+        arranged = raw.replace("1", "i").replace("0", "o").replace("5", "s")
+        return hmac.new(session_key.encode(), arranged.encode(), hashlib.sha256).hexdigest() if session_key else ''
+
+    def run_verify(self, i=0):
+        """获取验证token"""
+        if i > 3:
+            print("验证失败次数过多")
+            return
         try:
-            config = self.session.get(f'{self.host}/api/auth/verify/config',
-                                 headers=self.get_site_headers('/auth/verify/config')).json()
-            captcha_id = config['data']['captchaId']
-            params = {
-                'callback': f'geetest_{int(time.time()* 1000)}',
-                'captcha_id': captcha_id,
-                'challenge': str(uuid.uuid4()),
-                'client_type': 'web',
-                'lang': 'zho',
-            }
-            load_res = self.fetch(f'{self.VERIFY_HOST}/load', params=params).text
-            data = json.loads(load_res[len(params['callback']) + 1:-1])['data']
-            t=str(int(time.time() * 1000))
-            heade={
-                'timestamp':t,
-                "sign":MD5.new(f'44344434tffrfeeffgdggdg{t}'.encode()).hexdigest()
-            }
+            # 获取验证码
+            h = self.get_site_headers('/auth/captcha')
+            r = self.session.get(f'{self.host}/api/auth/captcha', headers=h, timeout=10)
+            captcha_data = r.json().get('data', {})
+            uuid = captcha_data.get('uuid', '')
+            captcha_b64 = captcha_data.get('captcha', '')
+            if not uuid or not captcha_b64:
+                print("获取验证码失败")
+                return self.run_verify(i + 1)
 
-            body={
-                'type':'solve',
-                'bg':base64.b64encode(self.fetch(f"{self.STATIC_BASE}{data['bg']}").content).decode(),
-                'hb':base64.b64encode(self.fetch(f"{self.STATIC_BASE}{data['slice']}").content).decode(),
-            }
-            resp=self.post("http://mytv6688.xyz/aowuapp",json=body,headers=heade).json()
-            print("验证结果1：", resp)
-            pass_time = random.randint(1200, 2200)
-            inner_payload = self.get_dynamic_payload(data['lot_number'], resp["result"], pass_time, captcha_id,
-                                                                data['pow_detail'])
-            verify_params = {
-                "callback": f"geetest_{int(time.time() * 1000)}",
-                "captcha_id": captcha_id,
-                "client_type": "web",
-                "lot_number": data['lot_number'],
-                "payload": data['payload'],
-                "process_token": data['process_token'],
-                "payload_protocol": data['payload_protocol'],
-                "pt": data['pt'],
-                "w": self.get_w(inner_payload)
-            }
-            verify_res_raw = self.fetch(f'{self.VERIFY_HOST}/verify', params=verify_params).text
-            print("验证结果2：", verify_res_raw)
-            verify_data = json.loads(verify_res_raw[len(verify_params['callback']) + 1:-1])
-            sc = verify_data['data']['seccode']
-            json_body = {
-                "captchaId": sc['captcha_id'],
-                "captchaOutput": sc['captcha_output'],
-                "genTime": int(sc['gen_time']),
-                "lotNumber": sc['lot_number'],
-                "passToken": sc['pass_token']
-            }
-            final_res = self.session.post(f'{self.host}/api/auth/verify', headers=self.get_site_headers("/auth/verify"),
-                                          json=json_body)
-            print("验证结果3：", final_res.text)
-            self.Token = final_res.json()["data"]["token"]
-        except  Exception as e:
-            print(e)
-            return self.run_verify(i+1)
+            # 保存验证码图片
+            img_data = base64.b64decode(captcha_b64.split(',')[1] if ',' in captcha_b64 else captcha_b64)
+            captcha_path = os.path.join(os.path.dirname(__file__), 'captcha_temp.png')
+            with open(captcha_path, 'wb') as f:
+                f.write(img_data)
+            print(f"验证码已保存: {captcha_path}")
 
-    def Req(self,path,params,i=0):
-        self.session.headers.update(self.get_site_headers(path.split("/api")[-1], i))
-        resp=self.session.get(f"{self.host}{path}",params=params)
-        if '完成验证' in resp.text:
+            # 尝试OCR识别
+            captcha_text = ''
+            try:
+                from cnocr import CnOcr
+                ocr = CnOcr()
+                result = ocr.ocr(captcha_path)
+                if result and isinstance(result, list) and len(result) > 0:
+                    texts = [line.get('text', '') for line in result if isinstance(line, dict)]
+                    captcha_text = ''.join(texts).strip()
+            except Exception as e:
+                print(f"OCR识别失败: {e}")
+
+            # 手动输入（如果OCR失败或为空）
+            if not captcha_text:
+                captcha_text = input("请输入验证码: ").strip()
+            if not captcha_text:
+                captcha_text = '27WM'
+
+            print(f"提交验证码: {captcha_text}")
+
+            # 提交验证
+            body = {'uuid': uuid, 'answer': captcha_text}
+            h_post = dict(h)
+            h_post['Content-Type'] = 'application/json;charset=UTF-8'
+            r = self.session.post(f'{self.host}/api/auth/verify', headers=h_post, json=body, timeout=10)
+            d = r.json()
+            print(f"验证结果: code={d.get('code')}, msg={d.get('message','')}")
+
+            if d.get('code') == 200 and d.get('data'):
+                self.Token = d['data'].get('token', '')
+                print(f"Token获取成功")
+            else:
+                print("验证失败，可能需要重新获取验证码")
+                return self.run_verify(i + 1)
+        except Exception as e:
+            print(f"验证异常: {e}")
+            return self.run_verify(i + 1)
+
+    def Req(self, path, params, i=0):
+        headers = self.get_site_headers(path.split("/api")[-1], i)
+        self.session.headers.update(headers)
+        resp = self.session.get(f"{self.host}{path}", params=params)
+        jd = resp.json()
+        if jd.get('code') == 1004 and i == 0:
             self.run_verify()
-            self.session.headers.update(self.get_site_headers(path.split("/api")[-1], i))
-            resp = self.session.get(f"{self.host}{path}",params=params)
-        print(resp.status_code)
-        # print(resp.text)
-        return resp.json()
+            headers = self.get_site_headers(path.split("/api")[-1], i)
+            self.session.headers.update(headers)
+            resp = self.session.get(f"{self.host}{path}", params=params)
+            jd = resp.json()
+        return jd
 
     def homeContent(self, filter):
         data = self.Req("/api/category/top", {}, 1)
@@ -282,38 +311,47 @@ class Spider(Spider):
         return result
 
     def detailContent(self, ids):
-        resp=self.Req("/api/film/detail/play/app",{'id': ids[0]})
-        v=resp['data']
-        n,p=[],[]
-        for i in v.get('playLineList'):
-            n.append(i['playerName'])
-            m=[f"{j['name']}${j['id']}" for j in i.get('lines')]
+        resp = self.Req("/api/film/detail/play/app", {'id': ids[0]})
+        if resp.get('code') != 200 or not resp.get('data'):
+            return {'list': [{
+                'vod_id': ids[0],
+                'vod_name': '加载失败',
+                'vod_pic': '',
+                'vod_play_from': '加载失败',
+                'vod_play_url': ''
+            }]}
+        v = resp['data']
+        n, p = [], []
+        for i in v.get('playLineList') or []:
+            n.append(i.get('playerName', ''))
+            m = [f"{j.get('name','')}${j.get('id','')}" for j in i.get('lines') or []]
             p.append('#'.join(m))
         vod = {
-            'type_name': v.get('categoryName'),
-            'vod_year': v.get('year'),
-            'vod_area': v.get('area'),
-            'vod_remarks': v.get('updateStatus'),
-            'vod_actor': v.get('actor'),
+            'type_name': v.get('categoryName', ''),
+            'vod_year': v.get('year', ''),
+            'vod_area': v.get('area', ''),
+            'vod_remarks': v.get('updateStatus', ''),
+            'vod_actor': v.get('actor', ''),
             'vod_director': '云霄仙子（困困版）',
-            'vod_content': v.get('blurb'),
+            'vod_content': v.get('blurb', ''),
             'vod_play_from': '$$$'.join(n),
             'vod_play_url': '$$$'.join(p)
         }
-        return {'list':[vod]}
+        return {'list': [vod]}
 
     def searchContent(self, key, quick, pg="1"):
-        params={
-          "pageNum": pg,
-          "pageSize": "10",
-          "keyword": key
-        }
-        resp=self.Req('/api/film/search',params=params)
-        return {'list':self.getList( resp['data']['list']),'page':pg}
+        params = {"pageNum": pg, "pageSize": "10", "keyword": key}
+        resp = self.Req('/api/film/search', params=params)
+        if resp.get('code') == 200 and resp.get('data'):
+            return {'list': self.getList(resp['data'].get('list', [])), 'page': pg}
+        return {'list': [], 'page': pg}
 
     def playerContent(self, flag, id, vipFlags):
-        resp=self.Req("/api/line/play/parse", {"lineId": id})
-        return  {'parse': 0, 'url': resp['data'], 'header': ''}
+        resp = self.Req("/api/line/play/parse", {"lineId": id})
+        url = resp.get('data', '')
+        if resp.get('code') != 200 or not url:
+            url = ''
+        return {'parse': 0, 'url': url, 'header': ''}
 
     def localProxy(self, param):
         pass
