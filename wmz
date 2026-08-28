@@ -14,6 +14,16 @@
       "changeable": 1
     },
     {
+      "key": "木兮",
+      "name": "🥇木兮｜影视",
+      "type": 3,
+      "api": "./py/木兮.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
       "key": "红果短剧",
       "name": "🥇红果｜影视",
       "type": 3,
