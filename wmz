@@ -24,6 +24,36 @@
       "changeable": 1
     },
     {
+      "key": "帧不戳",
+      "name": "🥇帧不戳｜影视",
+      "type": 3,
+      "api": "./py/帧不戳4K.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+{
+      "key": "网飞猫",
+      "name": "🥇网飞猫｜影视",
+      "type": 3,
+      "api": "./py/网飞猫修复版.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+{
+      "key": "可可",
+      "name": "🥇可可｜影视",
+      "type": 3,
+      "api": "./py/可可影视已修封面版.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
+    {
       "key": "咕噜",
       "name": "🥇咕噜｜影视",
       "type": 3,
