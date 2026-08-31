@@ -74,16 +74,6 @@
       "changeable": 1
     },
     {
-      "key": "山楂影视",
-      "name": "🥇山楂｜影视",
-      "type": 3,
-      "api": "./py/山楂影视.py",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "changeable": 1
-    },
-    {
       "key": "劇迷",
       "name": "🥇劇迷｜影视",
       "type": 3,
@@ -519,24 +509,6 @@
       "quickSearch": 1,
       "filterable": 1,
       "changeable": 1
-    },
-    {"key":"山楂","name":"💯山楂丨4K影视","type":3,"api":"csp_PianKu8"},{
-      "key": "夸快夸快",
-      "name": "💯夸快｜4K弹幕",
-      "type": 3,
-      "api": "csp_PanWebShare",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "changeable": 1,
-      "jar": "https://ncstatic-file.clewm.net/rsrc/2026/0813/10/a4fad72f81df0091aabe7399a85d99aa.jpg;md5;fa93bd0c5570ab3f20755c49bcbc9469",
-      "ext": {
-        "site": [
-          "https://ogkk.nxog.eu.org",
-          "https://ogkk.nxog.fun",
-          "https://woog.歌.de5.net"
-        ]
-      }
     },{
       "key": "csp_wogg1",
       "name": "💯玩歌｜4K弹幕",
