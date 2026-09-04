@@ -106,6 +106,7 @@ _AREA_VALUES = [
 
 # 年份筛选
 _YEAR_VALUES = [
+    {"n": "全部", "v": ""},
     {"n": "2026", "v": "2026"},
     {"n": "2025", "v": "2025"},
     {"n": "2024", "v": "2024"},
@@ -160,7 +161,6 @@ _CLASS_FILTERS = {
     ],
     "dianshiju": [
         {"n": "都市", "v": "都市"},
-        {"n": "爱情", "v": "爱情"},
         {"n": "古装", "v": "古装"},
         {"n": "悬疑", "v": "悬疑"},
         {"n": "犯罪", "v": "犯罪"},
@@ -300,11 +300,6 @@ _SKIP_NAV = {
     '查看更多', '加载更多', '确定', '重置', '筛选',
     '全部', '类型', '地区', '年份', '语言', '排序',
 }
-# 内容屏蔽关键词（标题或备注含任意一个即过滤）
-_BANNED_KEYWORDS = (
-    '伦理', '三级', '18禁', '限制级',
-    '色情', 'AV', '情色', '裸体', '不适宜', '19禁',
-)
 _REMARK_PATTERNS = [
     r'class="[^"]*(?:pic-text|pic-tag|module-item-text|tag|remarks|state|label|badge)[^"]*"[^>]*>([^<]{1,20})<',
     r'<span[^>]*class="[^"]*(?:text-right|remarks|state|pic-tag)[^"]*"[^>]*>([^<]{1,20})<',
@@ -641,12 +636,6 @@ class Spider(Spider):
                         pic = self._extract_img_from_text(ctx)
 
             if not title:
-                continue
-
-            # === 屏蔽关键词过滤 ===
-            if any(kw in title for kw in _BANNED_KEYWORDS):
-                continue
-            if remarks and any(kw in remarks for kw in _BANNED_KEYWORDS):
                 continue
 
             pic = self._fix_img_url(pic)
@@ -1172,15 +1161,12 @@ class Spider(Spider):
                     if data.get("code") == 1 and data.get("list"):
                         videos = []
                         for item in data["list"]:
-                            name = item.get("name", "")
-                            if any(kw in name for kw in _BANNED_KEYWORDS):
-                                continue
                             pic = item.get("pic", "")
                             if pic:
                                 pic = self._fix_img_url(pic)
                             videos.append({
                                 "vod_id": str(item.get("id", "")),
-                                "vod_name": name,
+                                "vod_name": item.get("name", ""),
                                 "vod_pic": pic,
                                 "vod_remarks": "HD",
                             })
