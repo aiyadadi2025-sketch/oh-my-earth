@@ -13,6 +13,16 @@
       "filterable": 1,
       "changeable": 1
     },
+       {
+      "key": "vip兔",
+      "name": "🥇vip兔｜影视",
+      "type": 3,
+      "api": "./py/VIP兔(1).py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
     {
       "key": "木兮",
       "name": "🥇木兮｜影视",
