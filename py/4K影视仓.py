@@ -1227,11 +1227,14 @@ class Spider(Spider):
         播放解析：抓取 vodplay 页面，解析 player_aaaa 变量
         直链直接播放(parse=0)，非直链交壳子嗅探(parse=1)
         播放地址缓存10分钟
+        TVBox 传入的 id 格式为 "集数名称$vid-line-ep"，需提取后半段
         """
         if not id:
             return {"parse": 0, "playUrl": "", "url": ""}
 
-        play_id = str(id).replace("\\/", "/").strip()
+        # TVBox 用 $ 连接集数名称和播放ID，只取 $ 后面的部分
+        raw_id = str(id).replace("\\/", "/").strip()
+        play_id = raw_id.split("$")[-1].strip() if "$" in raw_id else raw_id
 
         # 播放地址缓存检查（15分钟）
         now = int(time.time())
