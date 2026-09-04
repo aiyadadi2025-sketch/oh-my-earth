@@ -665,6 +665,9 @@ class Spider(_BaseSpider):
         self.ext = ext
         self.host = ext.get("host") or HOST
         self.api = self.host + "/api"
+        # TVBox 不能运行滑块识别时，可由配置注入浏览器端获取的临时令牌。
+        # 支持 extend.verifyToken / extend.vtoken，以及环境变量 SYMX_VERIFY_TOKEN。
+        injected_token = ext.get("verifyToken") or ext.get("vtoken") or os.environ.get("SYMX_VERIFY_TOKEN") or ""
         # v4.4: 设备指纹持久化 — 重启后仍是同一"设备" (前端 localStorage 同款语义,
         # 风控引擎对「同 IP 反复出现新 clientId」加权)
         self._pdir = None
@@ -679,9 +682,9 @@ class Spider(_BaseSpider):
         try:
             vt = saved.get("vtoken") or ""
             vts = int(saved.get("ts") or 0)
-            self.vtoken = vt if (vt and now_ms - vts < 7200000) else ""
+            self.vtoken = injected_token or (vt if (vt and now_ms - vts < 7200000) else "")
         except Exception:
-            self.vtoken = ""
+            self.vtoken = injected_token or ""
         self._diag_v = ""
         self.session = ""
         self.trace_ids = []
@@ -1241,6 +1244,10 @@ class Spider(_BaseSpider):
                 return None
             c = d.get("code")
             if c == 1004 and retry_verify:
+                # 外部令牌失效时清理本地缓存，避免 TVBox 持续复用旧令牌。
+                if self.vtoken:
+                    self.vtoken = ""
+                    self._persist_token()
                 if self._circuit_ts and (time.time() - self._circuit_ts) < 180:
                     # 熔断期内: 不再尝试滑块 (防滚雪球), 透传 1004
                     self._diag_v = "CD%d" % int(180 - (time.time() - self._circuit_ts))
