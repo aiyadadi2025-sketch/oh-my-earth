@@ -252,6 +252,19 @@ for c in CLASSES:
 # ============================================================
 _RE_VODDAIL_ID = re.compile(r'/voddetail/(\d+)\.html')
 _RE_A_TAG = re.compile(r'<a\s+([^>]*?href="/voddetail/(\d+)\.html"[^>]*?)>(.*?)</a>', re.S | re.I)
+# 兼容新模板 myui-vodbox-content 卡片结构（<a> 与 <img> 分离）
+_RE_MYUI_CARD = re.compile(
+    r'<a\s+href="/voddetail/(\d+)\.html"[^>]*>'
+    r'[^<]*?'
+    r'<div[^>]*class="[^"]*myui-vodlist__thumb[^"]*"[^>]*>'
+    r'(.*?)'
+    r'</div>',
+    re.S | re.I
+)
+# 宽松版 player_aaaa：允许 var / = / 换行/空格
+_RE_PLAYER_AAAA = re.compile(r'player_aaaa\s*=\s*(\{.*?\})\s*[;<]', re.S)
+_RE_PLAYER_CFG = re.compile(r'MacPlayerConfig\s*=\s*(\{.*?\})\s*[;<]', re.S)
+_RE_PLAYER_DATA = re.compile(r'player_data\s*=\s*(\{.*?\})\s*[;<]', re.S)
 _RE_TITLE_ATTR = re.compile(r'title="([^"]{2,100})"')
 _RE_ALT_ATTR = re.compile(r'alt="([^"]{2,100})"')
 _RE_IMG_LAZY = re.compile(
@@ -560,6 +573,7 @@ class Spider(Spider):
         从 HTML 中解析视频卡片列表（兼容多种苹果CMS v10 模板）
         对每个 voddetail ID，找到所有包含该链接的 <a> 标签，
         从标签属性和内部内容中提取标题/图片/备注。
+        同时兼容新模板 myui-vodbox-content + content-card 结构。
         """
         results = []
         seen_ids = set()
@@ -615,6 +629,34 @@ class Spider(Spider):
                             if val and val not in _SKIP_NAV:
                                 remarks = val
                                 break
+
+            # === 后备：新模板 myui-vodbox-content 卡片结构 ===
+            if not title or not pic:
+                first_pos = html.find('/voddetail/%s.html' % vid)
+                if first_pos >= 0:
+                    # 找卡片容器（往前回溯到 myui-vodbox-content）
+                    ctx_start = max(0, html.rfind('<div', 0, first_pos + 200))
+                    ctx_end = html.find('</div>', first_pos)
+                    if ctx_end > ctx_start:
+                        card_html = html[ctx_start:ctx_end + 6]
+                        if not title:
+                            for tag_re in (_RE_TITLE_ATTR, _RE_ALT_ATTR):
+                                tm = tag_re.search(card_html)
+                                if tm:
+                                    t = tm.group(1).strip()
+                                    if t and t not in _SKIP_TEXTS and not t.startswith('http'):
+                                        title = t
+                                        break
+                            if not title:
+                                texts = re.findall(r'>([^<]{3,100})<', card_html)
+                                for t in texts:
+                                    t = t.strip()
+                                    if (t and len(t) > 2 and not t.startswith('http')
+                                            and not t.isdigit() and t not in _SKIP_TEXTS):
+                                        title = t
+                                        break
+                        if not pic:
+                            pic = self._extract_img_from_text(card_html)
 
             # === 后备：从链接位置附近搜索 ===
             if not title or not pic:
@@ -1130,7 +1172,7 @@ class Spider(Spider):
     # ============================================================
 
     def searchContent(self, key, quick, pg="1"):
-        """搜索：多种URL格式尝试，带2分钟缓存"""
+        """搜索：优先 AJAX suggest API（主站已关闭 vodsearch HTML 路由）"""
         try:
             page = int(pg or 1)
             if page < 1:
@@ -1149,57 +1191,30 @@ class Spider(Spider):
                 if now - cache_time < 120:
                     return cached
 
-            # 尝试多种搜索URL格式
-            search_urls = self._build_search_urls(wd, page)
-            html = ""
-            for url in search_urls:
-                if not url:
-                    continue
-                html = self._fetch_html(url, timeout=1.5, retries=1)
-                if html and '/voddetail/' in html:
-                    break
-                html = ""
-
-            if not html:
-                # 最后尝试 AJAX 建议 API
-                ajax_url = HOST + "/index.php/ajax/suggest?mid=1&wd=" + quote(wd, safe="") + "&limit=20"
-                try:
-                    rsp = self.fetch(ajax_url, headers=self.header, timeout=1.5)
-                    data = json.loads(self._rsp_text(rsp))
-                    if data.get("code") == 1 and data.get("list"):
-                        videos = []
-                        for item in data["list"]:
-                            pic = item.get("pic", "")
-                            if pic:
-                                pic = self._fix_img_url(pic)
-                            videos.append({
-                                "vod_id": str(item.get("id", "")),
-                                "vod_name": item.get("name", ""),
-                                "vod_pic": pic,
-                                "vod_remarks": "HD",
-                            })
-                        if videos:
-                            result = {"list": videos}
-                            self._search_cache[cache_key] = (now, result)
-                            return result
-                except Exception:
-                    pass
-                return {"list": []}
-
-            videos = self._parse_video_cards(html)
-
-            if not videos:
-                return {"list": []}
-
-            result = {"list": videos}
-            self._search_cache[cache_key] = (now, result)
-            # 清理过期缓存
-            if len(self._search_cache) > 50:
-                expired = [k for k, (t, _) in self._search_cache.items() if now - t > 300]
-                for k in expired:
-                    del self._search_cache[k]
-
-            return result
+            # 主站 vodsearch HTML 路由已返回 404，直接使用 AJAX suggest API
+            ajax_url = HOST + "/index.php/ajax/suggest?mid=1&wd=" + quote(wd, safe="") + "&limit=20"
+            try:
+                rsp = self.fetch(ajax_url, headers=self.header, timeout=1.5)
+                data = json.loads(self._rsp_text(rsp))
+                if data.get("code") == 1 and data.get("list"):
+                    videos = []
+                    for item in data["list"]:
+                        pic = item.get("pic", "")
+                        if pic:
+                            pic = self._fix_img_url(pic)
+                        videos.append({
+                            "vod_id": str(item.get("id", "")),
+                            "vod_name": item.get("name", ""),
+                            "vod_pic": pic,
+                            "vod_remarks": "HD",
+                        })
+                    if videos:
+                        result = {"list": videos}
+                        self._search_cache[cache_key] = (now, result)
+                        return result
+            except Exception:
+                pass
+            return {"list": []}
         except Exception:
             return {"list": []}
 
