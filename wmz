@@ -414,8 +414,6 @@
       "filterable": 1,
       "ext": "https://cdn.jsdmirror.com/gh/ouhaibo1980/tvbox@main/XYQHiker/电影港.json"
     },
-    { "key": "网盘4k", "name": "💯网盘4k｜影视", "type": 3, "api": "./py/网盘4k.py"  },
-    { "key": "4k狗", "name": "💯4k狗｜影视", "type": 3, "api": "./py/4k狗.py"  },
     { "key": "影视仓", "name": "💯4K影视仓｜影视", "type": 3, "api": "./py/4K影视仓.py"  },
     { "key": "影探4K_v6", "name": "💯4K影探｜影视", "type": 3, "api": "./py/影探4K_v6.py"  },
     {
