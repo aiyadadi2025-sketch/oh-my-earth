@@ -13,6 +13,16 @@
       "filterable": 1,
       "changeable": 1
     },
+    {
+      "key": "观影",
+      "name": "🥇观影｜影视",
+      "type": 3,
+      "api": "./py/观影.py",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "changeable": 1
+    },
        {
       "key": "vip兔",
       "name": "🥇vip兔｜影视",
