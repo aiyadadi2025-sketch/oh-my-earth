@@ -7,7 +7,7 @@
       "key": "爱优腾",
       "name": "🥇爱优腾芒哔｜影视",
       "type": 3,
-      "api": "./py/爱优腾芒哔.js",
+      "api": "./py/爱优腾芒哔.py",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
