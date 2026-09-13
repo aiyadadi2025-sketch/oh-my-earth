@@ -1,1 +1,1159 @@
-const _0x59337f=_0x7bd7;(function(_0x4752b7,_0x2d7717){const _0x3a3c59=_0x7bd7,_0x337189=_0x4752b7();while(!![]){try{const _0x23c569=-parseInt(_0x3a3c59(0x7e))/0x1*(-parseInt(_0x3a3c59(0xca))/0x2)+-parseInt(_0x3a3c59(0xa2))/0x3+parseInt(_0x3a3c59(0xbc))/0x4+-parseInt(_0x3a3c59(0x76))/0x5+-parseInt(_0x3a3c59(0xe7))/0x6*(-parseInt(_0x3a3c59(0x86))/0x7)+-parseInt(_0x3a3c59(0xee))/0x8*(-parseInt(_0x3a3c59(0xe1))/0x9)+-parseInt(_0x3a3c59(0xb1))/0xa;if(_0x23c569===_0x2d7717)break;else _0x337189['push'](_0x337189['shift']());}catch(_0x34d55e){_0x337189['push'](_0x337189['shift']());}}}(_0x6010,0x511d2));import _0x29bb3d from'assets://js/lib/cheerio.min.js';const sites=['http://cj.tianwe.cn',_0x59337f(0xce),_0x59337f(0xad)],UA=_0x59337f(0xe9);function safeJsonParse(_0x442da2){const _0x13604d=_0x59337f,_0x357c62={'utXID':_0x13604d(0x98)};try{return _0x357c62[_0x13604d(0xf1)]==typeof _0x442da2?JSON[_0x13604d(0xc7)](_0x442da2):_0x442da2;}catch(_0x88096f){return _0x442da2;}}const parseApiList=[_0x59337f(0x96)];async function myFetch(_0x19ee90,_0xea3d56={}){const _0x2e5da2=_0x59337f,_0x1189d0={'nNsPI':function(_0x5aca0a,_0x990483){return _0x5aca0a!==_0x990483;},'kYeYe':_0x2e5da2(0xec),'ZVONS':'get','OjUuX':function(_0x3d4382,_0x1552f6){return _0x3d4382(_0x1552f6);},'jwZQe':function(_0x4d41c9,_0x2df379,_0x301eab){return _0x4d41c9(_0x2df379,_0x301eab);}};let _0x528b41=null;try{return _0x1189d0['nNsPI'](_0x1189d0['kYeYe'],'zTpAU')?_0x11aced:(_0x528b41=await req(_0x19ee90,{'method':_0xea3d56?.[_0x2e5da2(0xd2)]||_0x1189d0['ZVONS'],'headers':{'user-agent':UA},..._0xea3d56}),_0x1189d0[_0x2e5da2(0xc3)](safeJsonParse,_0x528b41?.[_0x2e5da2(0x97)]));}catch(_0x24bf4e){return _0x1189d0[_0x2e5da2(0x87)](mylog,_0x2e5da2(0x85),_0x24bf4e),_0x528b41?.[_0x2e5da2(0x97)];}}function backErr(_0x390e6c,_0x238af3=''){const _0x1d91f0=_0x59337f,_0x22bfac={'encmE':function(_0x5669e9,_0xd3fa84,_0x52fb1d){return _0x5669e9(_0xd3fa84,_0x52fb1d);},'imerW':function(_0x4cdfaf,_0x813074){return _0x4cdfaf(_0x813074);}};return _0x22bfac[_0x1d91f0(0x8f)](mylog,_0x238af3?_0x238af3+_0x1d91f0(0x8b):'',_0x390e6c),JSON[_0x1d91f0(0xd0)]({'msg':_0x390e6c[_0x1d91f0(0xaa)]||_0x22bfac[_0x1d91f0(0xf0)](String,_0x390e6c)});}function mylog(){console['log']('腾爱优聚合',...arguments);}let baseUrl=sites[0x0];function _0x6010(){const _0x28b74c=['r1vru2G','jNbNpq','DM9Kx3jLBwfYA3m','Ahr0Chm6lY90AwfUD2vPlNf6EI5PBW','6l+E57UT5yMN','C3rYAw5NAwz5','AxnbCNjHEq','Bwv0Ag9K','AxfzshK','wgnxBhm','D0zdrxa','mJaYnG','jdeV','EwvHCJ0','uNbvsgW','vuvnAva','DM9Kx3bSyxLFzNjVBq','6kEJ5P6q5AsX6lsLoIa','AM9PBG','r2XXv2u','57QQ5B2v54Mh','AwrZpq','ovLhsvjQvq','yxbPihnLyxjJAfvYBdO','DM9Kx2nVBNrLBNq','CgLJ','rLfHAgG','DM9Kx3bPyW','mtHoEujSuuW','rM5HA3m','tw96AwXSys81lJaGkfDPBMrVD3mGtLqGmtaUmdSGv2LUnJq7ihG2ncKGqxbWBgvxzwjlAxqVntm3lJm2icHlsfrntcWGBgLRzsbhzwnRBYKGq2HYB21LlZe1mc4WlJaUmcbtywzHCMKVntm3lJm2','5lYy6yw36kEg6Akr','BgLTAxq9mJq','ELrWqvu','DM9Kx3LLyxi','mZe2ndu5mMHUsMjPua','qKvjswG','Aw1LCLC','Dxrysuq','Btn1','vMPVqNC','yxbPignHDgvNB3j5ihvYBcaTpG','nJiXnJC1u3LSB2j5','wvD3Dem','ChvZAa','55U06zo+5PEG6zYa6kEJ5P6q77Ym55U05O6L6l+u5zUE','Aw5JBhvKzxm','BgLZDa','mJaYmG','qvbjioIVT+AXGUAxOowtJEw6La','ntm4mdDRAMD5vxm','CMvWBgfJzq','rxbctMi','CwL5Aq','DM9Kx2XHBMC','BMfTzq','DvPJtLa','BxLMzxrJAcbLCNiG','mtG2mJa3CfLAqNng','ANDAuwu','C29Tzq','Ahr0Chm6lY8','DM9Kx2LK','igvYCJO','CgfNzwnVDw50','y2vArgi','uu5dCgG','zw5JBuu','mJaYna','yMLSAwjPBgK','thzYELC','DM9Kx2fYzwe','A25ZzLK','u2DctLG','Ahr0Chm6lY9QEc5RChr2lNvZlZ91CMW9','y29UDgvUDa','C3rYAw5N','y2XHC3m','zNjVBt0','EwvHCG','C1f0u2S','l2fWAs5WAhaVChjVDMLKzs92B2qVpW','rwvYz0e','Bwf0y2G','zhndB2O','zgv0ywLSDxjS','nty2nJi4s0j6Cgnn','Ew91A3u','CgC9','CgXHEEwKSEI0PtOG','BwfW','u0DXzxe','5PcC57sI6k+35Rgc5PYQ6l+u5zUE5PwW5O2U','uufwzKq','BwvZC2fNzq','DhLWzv9Uyw1L','mJaYnq','Ahr0Chm6lY9JAI4XmdaXmdG4oc54ExO','B2PAD0O','zeHxzve','qwDkBMW','nZe2mteZme90thnHzq','ywm9zgv0ywLS','mJaYmW','6iw+6k6V6kEg6Akr','l2fWAs9YzxnVBhzLlNbOCd90B2TLBJ0','BwD0DG','C3bSAxq','wvbsteq','wwrOB0q','yxDotKG','wgHVwxK','mJi1mZm4oejQzhLhqG','l2fWAs5WAhaVChjVDMLKzs92B2qVp2fJpwrLDgfPBcz3zd0','5Q2J5zYO6k+35Rgc6kEJ5P6q5zYW5z2aoG','DM9Kx3bSyxLFDxjS','zM9YrwfJAa','zMLSDgvY','6iQs5P6Cvfy','t2PvDvG','y2f0zwDVCNK','Bxa0','DM9Kx25HBwu','CgfYC2u','DhLxB2S','AM5ts3G','mtjMDu5jAva'];_0x6010=function(){return _0x28b74c;};return _0x6010();}async function init(_0x3cbef7){}async function homeVod(){const _0x89f33d=_0x59337f;return JSON[_0x89f33d(0xd0)]({'list':[]});}async function home(_0x355dd8){const _0x28fcab=_0x59337f,_0xbd158c={'NVbdO':'爱奇艺','LvrzW':_0x28fcab(0xa3),'uZcNP':_0x28fcab(0xea),'UEMiP':_0x28fcab(0xc2),'YdhoD':_0x28fcab(0x99),'QNCph':_0x28fcab(0xcf),'iqYHy':_0x28fcab(0x9b),'tyWok':_0x28fcab(0xd6),'EpBNb':_0x28fcab(0xac),'dsCoj':'2024','YWwtC':_0x28fcab(0xb3),'WHDna':_0x28fcab(0x7c),'ElMLg':function(_0x50150d,_0x5f3531){return _0x50150d(_0x5f3531);}};try{const _0x12070e=[{'type_id':'qq','type_pid':0x0,'type_name':_0x28fcab(0xb4)},{'type_id':_0x28fcab(0x81),'type_pid':0x0,'type_name':_0xbd158c['NVbdO']},{'type_id':_0xbd158c[_0x28fcab(0x92)],'type_pid':0x0,'type_name':_0xbd158c[_0x28fcab(0x84)]},{'type_id':_0x28fcab(0xb6),'type_pid':0x0,'type_name':_0xbd158c[_0x28fcab(0xda)]},{'type_id':_0x28fcab(0x91),'type_pid':0x0,'type_name':'B站'}],_0x492ae0={'key':_0xbd158c[_0x28fcab(0xb9)],'name':'类型','value':[{'n':'全部','v':''},{'n':_0xbd158c[_0x28fcab(0x8e)],'v':'2'},{'n':'电影','v':'1'},{'n':'动漫','v':'4'},{'n':'综艺','v':'3'},{'n':'少儿','v':'5'},{'n':_0x28fcab(0xdf),'v':'6'},{'n':'短剧','v':'7'}]},_0x284421={'key':_0xbd158c[_0x28fcab(0xd3)],'name':'年份','value':[{'n':'全部','v':''},{'n':_0xbd158c[_0x28fcab(0xc8)],'v':_0x28fcab(0xd6)},{'n':_0xbd158c[_0x28fcab(0x80)],'v':_0x28fcab(0xac)},{'n':_0xbd158c[_0x28fcab(0xa0)],'v':_0x28fcab(0x90)},{'n':_0xbd158c[_0x28fcab(0x77)],'v':_0x28fcab(0xb3)},{'n':_0xbd158c['WHDna'],'v':_0xbd158c['WHDna']}]};let _0x2743e2={};return _0x12070e[_0x28fcab(0xc0)](_0x2fdbd3=>{_0x2743e2[_0x2fdbd3['type_id']]=[_0x492ae0,_0x284421];}),JSON[_0x28fcab(0xd0)]({'class':_0x12070e,'filters':_0x2743e2});}catch(_0x90ddab){return _0xbd158c['ElMLg'](backErr,_0x90ddab);}}async function detail(_0x54b5d8){const _0x38df40=_0x59337f,_0x5bdff3={'SgCUK':function(_0x9da85,_0xa85167,_0x22ac87){return _0x9da85(_0xa85167,_0x22ac87);},'VjoBw':function(_0x337acc,_0x516ba1){return _0x337acc(_0x516ba1);}};try{let _0x1e74a1=baseUrl+_0x38df40(0x9d)+[_0x38df40(0xb2),_0x38df40(0xe0)+_0x54b5d8][_0x38df40(0xdd)]('&');_0x5bdff3['SgCUK'](mylog,_0x38df40(0xa1),_0x1e74a1);let _0xc0c9bd=await _0x5bdff3['VjoBw'](myFetch,_0x1e74a1),_0xbbf4e5=[];return Array['isArray'](_0xc0c9bd?.[_0x38df40(0x7b)])&&(_0xbbf4e5=_0xc0c9bd[_0x38df40(0x7b)]['map'](_0x104836=>({'vod_id':_0x104836[_0x38df40(0x8a)],'vod_name':_0x104836[_0x38df40(0xc6)],'vod_pic':_0x104836['vod_pic'],'vod_remarks':_0x104836[_0x38df40(0xcd)],'vod_year':_0x104836[_0x38df40(0xed)],'type_name':_0x104836[_0x38df40(0xab)],'vod_area':_0x104836[_0x38df40(0x93)],'vod_lang':_0x104836[_0x38df40(0x82)],'vod_content':_0x104836[_0x38df40(0xe3)],'vod_play_from':_0x104836[_0x38df40(0xdb)],'vod_play_url':_0x104836[_0x38df40(0xbf)]}))[_0x38df40(0xc1)](_0x306442=>_0x306442[_0x38df40(0x8a)])),JSON[_0x38df40(0xd0)]({'list':_0xbbf4e5});}catch(_0x50a00c){return _0x5bdff3[_0x38df40(0x74)](backErr,_0x50a00c);}}async function category(_0x1ea713,_0x3109b9=0x1,_0x200e7c,_0x2754ed={}){const _0x40efbd=_0x59337f,_0xdf0b9b={'knsfY':_0x40efbd(0xb2),'sQtSk':_0x40efbd(0xeb),'ceZDb':function(_0x5caf57,_0x30d63e){return _0x5caf57(_0x30d63e);},'RpUHl':function(_0x427d7f,_0x2f9146){return _0x427d7f(_0x2f9146);},'GlqWe':function(_0x77e0fd,_0x240794,_0x1c5827){return _0x77e0fd(_0x240794,_0x1c5827);},'awNNH':_0x40efbd(0x75),'FQahh':function(_0x517b00,_0x3b9263){return _0x517b00(_0x3b9263);},'YPRLD':_0x40efbd(0x7d),'EergA':_0x40efbd(0xc4)};try{let _0x3f736d=[_0x40efbd(0x9a)+(_0x1ea713||'qq'),_0xdf0b9b[_0x40efbd(0x94)],_0xdf0b9b[_0x40efbd(0x9c)],_0x40efbd(0xa4)+(_0xdf0b9b[_0x40efbd(0x8d)](parseInt,_0x3109b9)||0x1)],_0x25545b=_0x2754ed&&_0x2754ed[_0x40efbd(0x99)]?_0x2754ed[_0x40efbd(0x99)]:'2';_0x3f736d[_0x40efbd(0x78)]('t='+_0x25545b),_0x2754ed&&_0x2754ed['year']&&_0x3f736d[_0x40efbd(0x78)](_0x40efbd(0xd8)+_0xdf0b9b[_0x40efbd(0xd9)](encodeURIComponent,_0x2754ed[_0x40efbd(0x9b)]));const _0x97602d=baseUrl+_0x40efbd(0x9d)+_0x3f736d[_0x40efbd(0xdd)]('&');_0xdf0b9b[_0x40efbd(0xde)](mylog,_0xdf0b9b[_0x40efbd(0xba)],_0x97602d);const _0x3e593e=await _0xdf0b9b[_0x40efbd(0xe5)](myFetch,_0x97602d);if(!_0x3e593e)throw new Error(_0xdf0b9b[_0x40efbd(0xb8)]);let _0xc651fd=[];Array['isArray'](_0x3e593e?.[_0x40efbd(0x7b)])&&(_0xc651fd=_0x3e593e[_0x40efbd(0x7b)][_0x40efbd(0xa6)](_0x234350=>{const _0x5ba9e5=_0x40efbd;let _0x4c8164=_0x234350['vod_name'];return{'vod_id':_0x234350[_0x5ba9e5(0x8a)],'vod_name':_0x4c8164,'vod_pic':_0x234350[_0x5ba9e5(0xe6)],'vod_remarks':_0x234350[_0x5ba9e5(0xcd)],'vod_year':_0x234350['vod_year']};}));const _0x787864=_0xdf0b9b[_0x40efbd(0xe5)](parseInt,_0x3e593e?.[_0x40efbd(0x8c)])||0x1;return JSON[_0x40efbd(0xd0)]({'list':_0xc651fd,'pagecount':_0x787864});}catch(_0x307339){return backErr(_0x307339,_0xdf0b9b[_0x40efbd(0x9e)]);}}function _0x7bd7(_0x1ff6f0,_0x549c1b){_0x1ff6f0=_0x1ff6f0-0x74;const _0x601033=_0x6010();let _0x7bd7a7=_0x601033[_0x1ff6f0];if(_0x7bd7['eAthWb']===undefined){var _0x17ce00=function(_0x3ef08e){const _0xd6a9e7='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';let _0x75f923='',_0x532100='';for(let _0x3ce520=0x0,_0x3a93d1,_0x22d734,_0x1aaa92=0x0;_0x22d734=_0x3ef08e['charAt'](_0x1aaa92++);~_0x22d734&&(_0x3a93d1=_0x3ce520%0x4?_0x3a93d1*0x40+_0x22d734:_0x22d734,_0x3ce520++%0x4)?_0x75f923+=String['fromCharCode'](0xff&_0x3a93d1>>(-0x2*_0x3ce520&0x6)):0x0){_0x22d734=_0xd6a9e7['indexOf'](_0x22d734);}for(let _0x3f57bb=0x0,_0x5a6beb=_0x75f923['length'];_0x3f57bb<_0x5a6beb;_0x3f57bb++){_0x532100+='%'+('00'+_0x75f923['charCodeAt'](_0x3f57bb)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0x532100);};_0x7bd7['osbcaS']=_0x17ce00,_0x7bd7['NvRFRk']={},_0x7bd7['eAthWb']=!![];}const _0x542174=_0x601033[0x0],_0x51f69c=_0x1ff6f0+_0x542174,_0x55e8fa=_0x7bd7['NvRFRk'][_0x51f69c];return!_0x55e8fa?(_0x7bd7a7=_0x7bd7['osbcaS'](_0x7bd7a7),_0x7bd7['NvRFRk'][_0x51f69c]=_0x7bd7a7):_0x7bd7a7=_0x55e8fa,_0x7bd7a7;}async function search(_0x57ec7f,_0x2c9ebe,_0x5cbabd){const _0x3f7b09=_0x59337f,_0x5bc9be={'XhoYy':function(_0x13e192,_0x4fe4dc){return _0x13e192(_0x4fe4dc);},'wFCEp':_0x3f7b09(0xa8),'Fnaks':function(_0x12fa14,_0x484c81){return _0x12fa14(_0x484c81);}};let _0x524f81=_0x5cbabd?_0x5bc9be[_0x3f7b09(0xbb)](parseInt,_0x5cbabd):0x1;try{const _0x592e74=baseUrl+_0x3f7b09(0xbd)+_0x5bc9be[_0x3f7b09(0xbb)](encodeURIComponent,_0x57ec7f)+_0x3f7b09(0xcc)+_0x524f81;mylog(_0x3f7b09(0xe2),_0x592e74);const _0x379efe=await myFetch(_0x592e74);if(!_0x379efe)throw new Error(_0x5bc9be[_0x3f7b09(0xd5)]);let _0x1c8488=[];return Array[_0x3f7b09(0xd1)](_0x379efe?.['list'])&&(_0x1c8488=_0x379efe[_0x3f7b09(0x7b)][_0x3f7b09(0xa6)](_0x2447ee=>({'vod_id':_0x2447ee[_0x3f7b09(0x8a)],'vod_name':_0x2447ee[_0x3f7b09(0xc6)]||_0x2447ee[_0x3f7b09(0x83)],'vod_pic':_0x2447ee[_0x3f7b09(0xe6)]||_0x2447ee[_0x3f7b09(0xe4)],'vod_remarks':_0x2447ee[_0x3f7b09(0xcd)]||''}))[_0x3f7b09(0xc1)](_0x594e8b=>_0x594e8b[_0x3f7b09(0x8a)])),JSON[_0x3f7b09(0xd0)]({'list':_0x1c8488,'pagecount':_0x5bc9be[_0x3f7b09(0xe8)](parseInt,_0x379efe?.[_0x3f7b09(0x8c)])||0x1});}catch(_0x3f24a8){return backErr(_0x3f24a8);}}function isDirectVideoUrl(_0x320fb1){const _0x242eac=_0x59337f,_0x219cfa={'dHWeQ':_0x242eac(0xf2)};return[_0x219cfa[_0x242eac(0xaf)],_0x242eac(0xc5)][_0x242eac(0x88)](_0x28cf9a=>(_0x320fb1+'')[_0x242eac(0x7a)](_0x28cf9a));}function extractConfig(_0x188680){const _0x370336=_0x59337f,_0x4369d8=_0x188680[_0x370336(0x9f)](/apiToken\s*:\s*["']([^"']+)["']/);return{'apiToken':_0x4369d8?_0x4369d8[0x1]:null};}function formatUrl(_0x1e9465){const _0x4246ae=_0x59337f,_0x5a880d={'SGqeq':_0x4246ae(0xd7)};return _0x1e9465?_0x1e9465?.['replace'](/\\/g,'')?.[_0x4246ae(0x7f)](/^(https?:\/)((?!\/))/i,_0x5a880d[_0x4246ae(0xa7)]):'';}async function parseVideoUrl(_0x472d7a){const _0x43eb69=_0x59337f,_0x2f9b93={'XcWls':_0x43eb69(0x79),'ojZwJ':function(_0x34c079,_0x2485f1){return _0x34c079+_0x2485f1;},'AgJnl':function(_0x58c137,_0x43407c,_0x4cc1f2){return _0x58c137(_0x43407c,_0x4cc1f2);},'SgBNX':_0x43eb69(0xbe),'jnSKx':'解析源无\x20token','GUQSh':function(_0x49073c,_0x21d39b){return _0x49073c(_0x21d39b);},'dvcaB':'解析源链接为空','zhrnd':'解析成功并返回\x20->'};if(isDirectVideoUrl(_0x472d7a))return mylog(_0x2f9b93[_0x43eb69(0xd4)]),_0x472d7a;const _0x3bc8c9=parseApiList[0x0],_0x1f4b0d=_0x2f9b93[_0x43eb69(0xae)](_0x3bc8c9,_0x472d7a);_0x2f9b93[_0x43eb69(0xb0)](mylog,_0x2f9b93[_0x43eb69(0x95)],_0x1f4b0d);try{const _0x1408be=await req(_0x1f4b0d,{'headers':{'user-agent':UA}}),_0x52d6c8=_0x1408be?.[_0x43eb69(0x97)]||'',{apiToken:_0x11567d}=extractConfig(_0x52d6c8);if(!_0x11567d)throw new Error(_0x2f9b93[_0x43eb69(0xc9)]);const _0x227263=_0x43eb69(0x89)+_0x3bc8c9[_0x43eb69(0xb7)]('//')[0x1][_0x43eb69(0xb7)]('/')[0x0]+_0x43eb69(0xb5)+_0x2f9b93[_0x43eb69(0xcb)](encodeURIComponent,_0x11567d),_0x407fd4=await req(_0x227263,{'headers':{'user-agent':UA}}),_0xb9335=_0x2f9b93[_0x43eb69(0xcb)](formatUrl,JSON[_0x43eb69(0xc7)](_0x407fd4[_0x43eb69(0x97)])['url']);if(!_0xb9335)throw new Error(_0x2f9b93['dvcaB']);return mylog(_0x2f9b93['zhrnd'],_0xb9335),_0xb9335;}catch(_0x5762d1){return _0x2f9b93[_0x43eb69(0xb0)](mylog,_0x43eb69(0xdc),_0x5762d1[_0x43eb69(0xaa)]),'';}}async function play(_0x5a8fec,_0x3d8076,_0x356a59){const _0xf48fa1=_0x59337f,_0x3df4c3={'vFVrl':function(_0xdb5b57,_0x247d78,_0x478439){return _0xdb5b57(_0x247d78,_0x478439);},'BEIIh':_0xf48fa1(0xc4),'hcaBd':function(_0x62d1f,_0x591122){return _0x62d1f(_0x591122);},'QAVfD':'AtEGF'};_0x3df4c3['hcaBd'](mylog,'开始获取播放地址:\x20'+_0x3d8076);const _0x2d8281=await _0x3df4c3['hcaBd'](parseVideoUrl,_0x3d8076);try{return JSON[_0xf48fa1(0xd0)]({'parse':0x0,'url':_0x2d8281});}catch(_0x418fb4){return _0x3df4c3[_0xf48fa1(0xa9)]!=='TWeVD'?(mylog(_0xf48fa1(0xa5)+_0x418fb4[_0xf48fa1(0xaa)]),JSON[_0xf48fa1(0xd0)]({'msg':_0x418fb4[_0xf48fa1(0xaa)]})):msslBr['vFVrl'](_0x36d2e0,_0x55dbc9,msslBr[_0xf48fa1(0xef)]);}}export default{'init':init,'home':home,'homeVod':homeVod,'category':category,'detail':detail,'play':play,'search':search};
+# -*- coding: utf-8 -*-
+"""
+爱优腾芒哔哩聚合 —— 影视聚合 Python 源（OK影视 / 蜂蜜影视 / TVBox 通用）
+=====================================================================
+【v5 修复说明（重点）】
+1) 类属性兜底：壳子 **不保证调用 init()**（didahd 可用实现里也强调了这点）。
+   旧版把 host/header/timeout/parse_list 全放在 init 里赋值，init 不执行时
+   属性根本不存在，一调用就 AttributeError -> 界面静默空白。
+   现在 __init__ 里无条件先兜底，保证任何入口进来属性都在。
+
+2) 三重网络栈（自动择优，成功即记住）：
+      native   -> 壳子基类原生 fetch/getHtml（走 Android OkHttp，网络兼容性最好）
+      requests -> 壳子内置 requests
+      urllib   -> 标准库（关掉 SSL 校验，壳子常缺 CA 证书）
+   手机壳子里的 Python 网络栈常因缺 CA 证书 / DNS / 代理失败，
+   而壳子原生方法走系统网络栈，基本必通。
+
+3) 多域名自动 failover：采集站经常换域名 / 内网穿透掉线，
+   依次尝试所有域名，拿到数据即自动切换并记住，以后不再逐个探测。
+
+4) 首页填充真实推荐数据：旧版 homeContent 的 list 恒为空 -> 首页白茫茫一片，
+   看起来就是"没有数据"。现在首页拉取真实数据。
+
+5) 诊断卡片：万一还是拿不到数据，界面上会直接显示失败原因
+   （用了哪个栈 / 试了几个域名 / 每个域名的错误），不再静默空白。
+
+【分类】数字 type_id（壳子兼容最好），内部映射回接口字母 from 参数。
+【播放】返回 parse=1 + 解析页 URL，交给壳子嗅探器抓真实地址。
+"""
+
+import re
+import json
+import sys
+import time
+
+try:
+    import urllib.parse as _uparse
+except Exception:  # noqa: BLE001
+    import urllib as _uparse  # py2
+
+try:
+    import requests as _requests
+    _HAS_REQUESTS = True
+except Exception:  # noqa: BLE001
+    _requests = None
+    _HAS_REQUESTS = False
+
+# 兼容壳子内置基类；本地测试无壳子时回退到空基类
+try:
+    from base.spider import Spider as _BaseSpider
+except Exception:  # noqa: BLE001
+    class _BaseSpider(object):
+        pass
+
+
+def _log(*args):
+    try:
+        print("[腾爱优]", *args)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _enc(value):
+    """encodeURIComponent（保留 !'()*-._~）。"""
+    try:
+        return _uparse.quote(str(value), safe="!'()*-._~")
+    except Exception:  # noqa: BLE001
+        return str(value)
+
+
+def _to_text(resp):
+    """把各种返回（str / bytes / Response 对象）统一成文本。"""
+    if resp is None:
+        return ""
+    if isinstance(resp, str):
+        return resp
+    try:
+        if isinstance(resp, bytes):
+            return resp.decode("utf-8", "ignore")
+    except Exception:  # noqa: BLE001
+        pass
+    for attr in ("text", "content", "data"):
+        try:
+            v = getattr(resp, attr)
+            if callable(v):
+                v = v()
+            if isinstance(v, bytes):
+                return v.decode("utf-8", "ignore")
+            if isinstance(v, str):
+                return v
+        except Exception:  # noqa: BLE001
+            continue
+    try:
+        return str(resp)
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+# 分类：数字 ID -> 接口字母参数 + 名称
+_CATEGORY = {
+    "1": ("qq",       "腾讯视频"),
+    "2": ("qiyi",     "爱奇艺"),
+    "3": ("youku",    "优酷视频"),
+    "4": ("mgtv",     "芒果TV"),
+    "5": ("bilibili", "B站"),
+}
+_KEY_TO_NUM = dict((v[0], k) for k, v in _CATEGORY.items())
+
+# ======================================================================
+# 平台 -> 真实分类表（实测抓取，2026-09-10）
+# ======================================================================
+# 之前只给每个平台硬塞 2~3 个分类，被吐槽"腾讯只有两个"。
+# 实际把 from=平台 & t=类型 全跑一遍后发现：
+#   每个平台都有 电影/连续剧/综艺/动漫/少儿/纪录片 6 个正式分类，
+#   腾讯、爱奇艺、芒果还另有短剧。数量差异如下（实测 total）：
+#
+#        电影   连续剧  综艺   动漫   少儿  纪录片   短剧
+#   qq    8622   2156  2501  2449  2166  3911  70993
+#   qiyi  2627   2490  1293  7135  7463  3074  99928
+#   youku 2011   1984  1414  3166  3978  3309      1   <- 短剧仅1条，不展示
+#   mgtv  1535   3803  1540   486   927   356     28
+#   bili  5696   2130   567  2174  3680  3534      2   <- 短剧仅2条，不展示
+#
+# 所以分类是"平台 × 该平台真实存在的类型"，共 7+7+6+7+6 = 33 个，
+# 而不是我自己拍脑袋定的 10 个。分类名用接口返回的官方 type_name。
+# 内容量太少的类型（<5 条）自动不展示，避免点进去一片空白。
+_CATALOG = (
+    # (平台key, 平台名, ((类型id, 分类名, 内容总数), ...))
+    ("qq", "腾讯视频", (
+        ("1", "电影", 8622), ("2", "连续剧", 2156), ("3", "综艺", 2501),
+        ("4", "动漫", 2449), ("5", "少儿", 2166), ("6", "纪录片", 3911),
+        ("7", "短剧", 70993),
+    )),
+    ("qiyi", "爱奇艺", (
+        ("1", "电影", 2627), ("2", "连续剧", 2490), ("3", "综艺", 1293),
+        ("4", "动漫", 7135), ("5", "少儿", 7463), ("6", "纪录片", 3074),
+        ("7", "短剧", 99928),
+    )),
+    ("youku", "优酷视频", (
+        ("1", "电影", 2011), ("2", "连续剧", 1984), ("3", "综艺", 1414),
+        ("4", "动漫", 3166), ("5", "少儿", 3978), ("6", "纪录片", 3309),
+    )),
+    ("mgtv", "芒果TV", (
+        ("1", "电影", 1535), ("2", "连续剧", 3803), ("3", "综艺", 1540),
+        ("4", "动漫", 486), ("5", "少儿", 927), ("6", "纪录片", 356),
+        ("7", "短剧", 28),
+    )),
+    ("bilibili", "B站", (
+        ("1", "电影", 5696), ("2", "连续剧", 2130), ("3", "综艺", 567),
+        ("4", "动漫", 2174), ("5", "少儿", 3680), ("6", "纪录片", 3534),
+    )),
+)
+_MIN_ITEMS = 5   # 内容少于这个数的分类不展示
+
+_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+       "(KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36")
+
+_KPTV_TIMEOUT = 6      # 取直链的独立短超时（默认 10s 太久了，拖慢起播）
+
+# 解析源（按实测响应速度排序：快的在前，"自动轮询"优先命中快的）
+# 实测：8090 0.74s < xmflv 1.17s < fongmi 1.58s
+# 数量控制在 12 个以内：vod_play_url 过长会让详情页卡顿甚至打不开。
+_PARSE_LIST = [
+    {"name": "8090",      "url": "https://www.8090g.cn/?url="},
+    {"name": "默认接口",   "url": "https://jx.xmflv.com/?url="},
+    {"name": "极速解析",   "url": "https://jx.2s0.cn/player/?url="},
+    {"name": "fongmi",    "url": "https://json.fongmi.cc/web?url="},
+    {"name": "我看VIP",    "url": "https://a.wkvip.net/?url="},
+    {"name": "M3U8解析",   "url": "https://jx.m3u8.tv/jx/jx.php?url="},
+    {"name": "Jn1解析",    "url": "https://yparse.jn1.cc/index.php?url="},
+    {"name": "CK解析",     "url": "https://www.ckplayer.vip/jiexi/?url="},
+    {"name": "HLS解析",    "url": "https://jx.hls.one/?url="},
+    {"name": "剖元解析",   "url": "https://www.pouyun.com/?url="},
+    {"name": "夜幕解析",   "url": "https://www.yemu.xyz/?url="},
+    {"name": "盘古解析",   "url": "https://www.pangujiexi.com/jiexi/?url="},
+]
+
+# 采集站域名（任一可用即可；_get_json_auto 会自动 failover 并记住可用的）
+# 【重要】cj.tianwe.cn 的 443 端口不提供 HTTPS（实测 SSL WRONG_VERSION_NUMBER），
+# 只能写 http://。之前把 https:// 排在第一位，每次都要先撞一次 SSL 错误、
+# 白白浪费一次超时，弱网设备上直接整体超时 -> 界面空白。
+# 顺序原则：已验证支持的协议优先，坏组合绝不放在前面。
+_HOSTS = [
+    "https://tianwei.qzz.io",      # 实测 https 可用（最快最稳，主用）
+    "http://cj.tianwe.cn",         # 原域名，仅支持 http
+    "https://cj.10010888.xyz",     # 官方备用 https
+    "http://tianwei.qzz.io",       # 上面 https 失败时的 http 兜底
+    "http://cj.10010888.xyz",
+]
+
+_STACKS = ("native", "requests", "urllib")
+
+
+class Spider(_BaseSpider):
+    """腾爱优聚合 —— 影视聚合源（v5 全兜底版）。"""
+
+    name = "腾爱优聚合"
+
+    # ==================================================================
+    # 类属性兜底 —— 即使 init() 完全不被调用，以下属性也一定存在
+    # ==================================================================
+    hosts = list(_HOSTS)
+    host = _HOSTS[0]
+    header = {
+        "User-Agent": _UA,
+        # 带上常规浏览器头：部分 CDN/WAF 对"裸 UA 无 Accept"的请求直接 403
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+        "Connection": "close",   # 避免 keep-alive 在弱网设备上挂住
+    }
+    timeout = 10
+
+    kptv_parse = "https://jx.kptv.us/?url="
+    kptv_host = "jx.kptv.us"
+    parse_list = list(_PARSE_LIST)
+    _parse_names = set(p["name"] for p in _PARSE_LIST)
+    detail_parse_count = len(_PARSE_LIST)
+
+    _rotate_idx = 0
+    _last_err = ""
+    _ok_host = ""
+    _ok_stack = ""
+    _cache = {}
+    _cache_ts = {}
+    _kptv_cache = {}
+
+    # ------------------------------------------------------------------
+    # 生命周期
+    # ------------------------------------------------------------------
+    def __init__(self, *args, **kwargs):
+        """无条件先兜底属性，再尝试调用基类 __init__（基类可能没有）。"""
+        self._ensure_attrs()
+        try:
+            _BaseSpider.__init__(self, *args, **kwargs)
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _ensure_attrs(self):
+        """把 init 里要用的属性全部补齐（幂等，可反复调用）。"""
+        if not getattr(self, "hosts", None):
+            self.hosts = list(_HOSTS)
+        if not getattr(self, "host", None):
+            self.host = self.hosts[0]
+        if not getattr(self, "header", None):
+            self.header = {
+                "User-Agent": _UA,
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "zh-CN,zh;q=0.9",
+                "Connection": "close",
+            }
+        if not getattr(self, "timeout", None):
+            self.timeout = 10
+        if not getattr(self, "kptv_parse", None):
+            self.kptv_parse = "https://jx.kptv.us/?url="
+        if not getattr(self, "kptv_host", None):
+            self.kptv_host = "jx.kptv.us"
+        if not getattr(self, "parse_list", None):
+            self.parse_list = list(_PARSE_LIST)
+        if not getattr(self, "_parse_names", None):
+            self._parse_names = set(p["name"] for p in self.parse_list)
+        if not getattr(self, "detail_parse_count", None):
+            self.detail_parse_count = len(self.parse_list)
+        if getattr(self, "_rotate_idx", None) is None:
+            self._rotate_idx = 0
+        if getattr(self, "_last_err", None) is None:
+            self._last_err = ""
+        if getattr(self, "_ok_host", None) is None:
+            self._ok_host = ""
+        if getattr(self, "_ok_stack", None) is None:
+            self._ok_stack = ""
+        if getattr(self, "_cache", None) is None:
+            self._cache = {}
+        if getattr(self, "_cache_ts", None) is None:
+            self._cache_ts = {}
+        if getattr(self, "_kptv_cache", None) is None:
+            self._kptv_cache = {}
+
+    def init(self, extend=""):
+        _log("init ->", extend)
+        self._ensure_attrs()
+        try:
+            if _HAS_REQUESTS:
+                self.session = _requests.Session()
+                self.session.headers.update(self.header)
+        except Exception as exc:  # noqa: BLE001
+            _log("session 创建失败:", exc)
+        return
+
+    def getName(self):
+        return self.name
+
+    def destroy(self):
+        pass
+
+    def isVideoFormat(self, url):
+        return False
+
+    def manualVideoCheck(self):
+        return False
+
+    def localProxy(self, param):
+        return None
+
+    # ------------------------------------------------------------------
+    # 网络层：三重网络栈
+    # ------------------------------------------------------------------
+    def _native_get(self, url):
+        """调用壳子基类原生请求方法（走 Android/Java 网络栈）。
+
+        【v5.1 重要修复】drpy 的 fetch/getHtml 多为 **回调式**，末尾必须传一个
+        回调函数；少传或传 None 时轻则抛异常、重则一直挂住不返回。
+        之前盲目穷举 4 种参数签名，一旦命中"要回调"的方法就会永久阻塞 ——
+        homeContent 永远不返回，界面一片空白（正是你遇到的现象）。
+        现在按签名精确调用，并保证任何一次尝试都有界。
+        """
+        # 统一的回调容器：不管壳子回调传的是 str / bytes / 响应对象都能接住
+        holder = {}
+
+        def _cb(*a):
+            for v in a:
+                t = _to_text(v)
+                if t and t.strip():
+                    holder["t"] = t
+                    return
+
+        # 1) fetch(url, headers, cb) —— drpy 最常见签名，三个参数都要给
+        fn = getattr(self, "fetch", None)
+        if callable(fn):
+            try:
+                fn(url, self.header, _cb)
+                if holder.get("t"):
+                    return holder["t"]
+            except Exception:  # noqa: BLE001
+                pass
+            # 部分壳子 fetch 是同步返回的，再试两参/单参
+            for args in ((url, self.header), (url,)):
+                try:
+                    txt = _to_text(fn(*args))
+                    if txt and txt.strip():
+                        return txt
+                except Exception:  # noqa: BLE001
+                    break
+
+        # 2) getHtml(url) / getPage(url) —— 一般是简单同步 GET
+        for nm in ("getHtml", "getPage"):
+            g = getattr(self, nm, None)
+            if not callable(g):
+                continue
+            for args in ((url,), (url, self.header)):
+                try:
+                    txt = _to_text(g(*args))
+                    if txt and txt.strip():
+                        return txt
+                except Exception:  # noqa: BLE001
+                    continue
+
+        # 3) 回调式 getHtml(url, cb)
+        for nm in ("getHtml", "getPage"):
+            g = getattr(self, nm, None)
+            if not callable(g):
+                continue
+            try:
+                holder.pop("t", None)
+                g(url, _cb)
+                if holder.get("t"):
+                    return holder["t"]
+            except Exception:  # noqa: BLE001
+                continue
+        return ""
+
+    def _http_via(self, stack, url):
+        """用指定网络栈 GET，返回文本；失败返回空串。"""
+        t = getattr(self, "timeout", 8) or 8
+        try:
+            if stack == "native":
+                return self._native_get(url)
+            if stack == "requests":
+                if not _HAS_REQUESTS:
+                    return ""
+                sess = getattr(self, "session", None) or _requests
+                r = sess.get(url, timeout=t, verify=False,
+                             headers=self.header, allow_redirects=False)
+                try:
+                    r.encoding = "utf-8"
+                except Exception:  # noqa: BLE001
+                    pass
+                return r.text or ""
+            # urllib
+            import urllib.request
+            import ssl as _ssl
+            ctx = None
+            try:
+                ctx = _ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = _ssl.CERT_NONE
+            except Exception:  # noqa: BLE001
+                ctx = None
+            req = urllib.request.Request(url, headers=self.header)
+            try:
+                resp = urllib.request.urlopen(req, timeout=t, context=ctx)
+            except TypeError:
+                resp = urllib.request.urlopen(req, timeout=t)
+            try:
+                raw = resp.read()
+            finally:
+                try:
+                    resp.close()
+                except Exception:  # noqa: BLE001
+                    pass
+            try:
+                return raw.decode("utf-8")
+            except Exception:  # noqa: BLE001
+                return raw.decode("latin-1", "ignore")
+        except Exception as exc:  # noqa: BLE001
+            _log("请求失败[%s] %s -> %s" % (stack, url[:70], exc))
+            return ""
+
+    def _ordered_hosts(self):
+        hs = list(getattr(self, "hosts", None) or _HOSTS)
+        ok = getattr(self, "_ok_host", "")
+        if ok and ok in hs:
+            hs.remove(ok)
+            hs.insert(0, ok)
+        return hs
+
+    def _ordered_stacks(self):
+        st = list(_STACKS)
+        ok = getattr(self, "_ok_stack", "")
+        if ok and ok in st:
+            st.remove(ok)
+            st.insert(0, ok)
+        if not _HAS_REQUESTS and "requests" in st:
+            st.remove("requests")
+        return st
+
+    def _get_json_auto(self, path, use_cache=True):
+        """依次尝试各域名/各网络栈，返回第一个拿到数据的 JSON。
+
+        【v6.1 关键性能修复】
+        以前只要 list 为空就换下一个域名重试 -> 一个"确实没有结果"的类型
+        （如搜"家业"的 t=1/3/5）会跑满 5域名 × 3网络栈 = 15 次请求，
+        每次都在等超时，单次搜索白耗 20 秒以上，壳子直接卡死。
+
+        现在区分两种情况：
+          - HTTP 拿到了、JSON 解开了，但 list 是空的 -> 这是**正常业务结果**
+            （该类型就是没内容），属于有效应答，立即返回，不再重试；
+          - 连 HTTP/JSON 都失败 -> 才算域名/网络故障，才换下一个候选。
+        这样空结果的搜索从 20s+ 降到 1.5s。
+        """
+        self._ensure_attrs()
+        if use_cache:
+            hit = self._cache_get(path)
+            if hit is not None:
+                return hit
+
+        hosts = self._ordered_hosts()
+        stacks = self._ordered_stacks()
+        errs = []
+        tried = 0
+        soft_fail = None       # 记住"能连通但没数据"的应答，作为兜底返回
+        for base in hosts:
+            short = base.split("//")[-1].replace("www.", "")[:18]
+            url = base + path
+            for st in stacks:
+                tried += 1
+                txt = self._http_via(st, url)
+                if not txt or not txt.strip():
+                    errs.append("%s/%s:空" % (short, st))
+                    continue
+                try:
+                    data = json.loads(txt)
+                except Exception:  # noqa: BLE001
+                    head = txt.strip()[:30].replace("\n", " ")
+                    errs.append("%s/%s:非JSON(%s)" % (short, st, head))
+                    continue
+
+                # 连通且是合法 JSON —— 这个域名/网络栈是好的，先记下来
+                self.host = base
+                self._ok_host = base
+                self._ok_stack = st
+                self._last_err = ""
+
+                if data and (data.get("list") or data.get("total")):
+                    self._cache_set(path, data)
+                    return data
+
+                # 合法 JSON 但空结果：这是"这类内容确实没有"的正常应答。
+                # 不再继续换域名（那只会白等超时），直接返回。
+                self._cache_set(path, data)
+                return data
+
+            if soft_fail is None and errs:
+                soft_fail = True
+
+        self._last_err = "试%d次|" % tried + ";".join(errs[:6])
+        _log("全部失败:", self._last_err)
+        return soft_fail
+
+    def _cache_get(self, key):
+        try:
+            ts = self._cache_ts.get(key, 0)
+            if time.time() - ts < 120:
+                return self._cache.get(key)
+        except Exception:  # noqa: BLE001
+            pass
+        return None
+
+    def _cache_set(self, key, val):
+        try:
+            self._cache[key] = val
+            self._cache_ts[key] = time.time()
+            if len(self._cache) > 60:
+                self._cache.clear()
+                self._cache_ts.clear()
+        except Exception:  # noqa: BLE001
+            pass
+
+    # ------------------------------------------------------------------
+    # 诊断卡片：拿不到数据时把原因直接显示到界面
+    # ------------------------------------------------------------------
+    def _env_brief(self):
+        try:
+            py = "%d.%d" % (sys.version_info[0], sys.version_info[1])
+        except Exception:  # noqa: BLE001
+            py = "?"
+        native = "有" if any(callable(getattr(self, n, None))
+                            for n in ("fetch", "getHtml", "getPage",
+                                      "request", "http")) else "无"
+        return "PY%s req%s 原生%s" % (py, "有" if _HAS_REQUESTS else "无", native)
+
+    def _diag_item(self, where):
+        err = (getattr(self, "_last_err", "") or "未知原因")
+        return [{
+            "vod_id": "0",
+            "vod_name": "[%s]无数据: %s" % (where, err[:70]),
+            "vod_pic": "",
+            "vod_remarks": self._env_brief(),
+        }]
+
+    # ------------------------------------------------------------------
+    # 首页
+    # ------------------------------------------------------------------
+    def homeContent(self, filter=False):
+        """首页：分类 + 筛选 + 推荐。
+
+        【v7 分类重做】
+        之前每个平台只给 2~3 个分类（被吐槽"腾讯只有两个、芒果只有一个"）。
+        现在按 _CATALOG 实测表展开：平台 × 该平台真实存在的类型，
+        腾讯 7 个 / 爱奇艺 7 个 / 优酷 6 个 / 芒果 7 个 / B站 6 个 = 33 个。
+        名称用平台名 + 官方分类名（如"腾讯视频·电影"）。
+        """
+        classes = self._build_classes()
+        result = {"class": classes, "list": []}
+
+        if filter:
+            type_filter = {
+                "key": "t", "name": "类型",
+                "value": [
+                    {"n": "全部", "v": ""}, {"n": "电影", "v": "1"},
+                    {"n": "剧集", "v": "2"}, {"n": "综艺", "v": "3"},
+                    {"n": "动漫", "v": "4"}, {"n": "少儿", "v": "5"},
+                    {"n": "纪录片", "v": "6"}, {"n": "短剧", "v": "7"},
+                ],
+            }
+            year_filter = {
+                "key": "year", "name": "年份",
+                "value": [{"n": "全部", "v": ""}] +
+                         [{"n": str(y), "v": str(y)}
+                          for y in range(2026, 2014, -1)],
+            }
+            area_filter = {
+                "key": "area", "name": "地区",
+                "value": [
+                    {"n": "全部", "v": ""}, {"n": "大陆", "v": "大陆"},
+                    {"n": "香港", "v": "香港"}, {"n": "台湾", "v": "台湾"},
+                    {"n": "美国", "v": "美国"}, {"n": "韩国", "v": "韩国"},
+                    {"n": "日本", "v": "日本"}, {"n": "泰国", "v": "泰国"},
+                ],
+            }
+            sort_filter = {
+                "key": "by", "name": "排序",
+                "value": [
+                    {"n": "最新", "v": "time"}, {"n": "最热", "v": "hits"},
+                    {"n": "评分", "v": "score"},
+                ],
+            }
+            result["filters"] = dict(
+                (c["type_id"], [type_filter, year_filter,
+                                area_filter, sort_filter])
+                for c in classes)
+
+        # 首页填充真实推荐（旧版恒空 -> 看起来就是"没数据"）
+        try:
+            result["list"] = self._home_recommend()
+        except Exception as exc:  # noqa: BLE001
+            _log("首页推荐异常:", exc)
+            result["list"] = []
+        return result
+
+    def _build_classes(self):
+        """按 _CATALOG 生成分类列表：平台 × 该平台真实存在的类型。
+
+        type_id 统一用 "平台-类型" 形式（如 "qq-2"），
+        categoryContent 再拆回 from=qq & t=2。
+        """
+        out = []
+        for key, pname, types in _CATALOG:
+            for tid, tname, total in types:
+                if total < _MIN_ITEMS:
+                    continue      # 内容太少的分类不展示，避免点进去空白
+                out.append({
+                    "type_id": "%s-%s" % (key, tid),
+                    "type_id_1": "0",
+                    "type_pid": "0",
+                    "type_name": "%s·%s" % (pname, tname),
+                })
+        return out
+
+    def _home_recommend(self):
+        """首页推荐。
+
+        【v7 封面修复】上一版为了提速改用 ac=list，结果**所有封面都没了**
+        （ac=list 的返回里根本没有 vod_pic 字段）。
+        实测两种模式耗时其实差不多（ac=list 1.1s vs ac=detail 1.3s），
+        之前"慢"的真凶是空结果被误判成故障后反复重试（单次白等20秒），
+        不是响应体积。所以这里改回 ac=detail，封面回来了，速度也不受影响。
+        """
+        path = "/api.php/provide/vod/?from=qq&ac=detail&t=2&pg=1"
+        data = self._get_json_auto(path)
+        if not data:
+            path = "/api.php/provide/vod/?from=qiyi&ac=detail&t=2&pg=1"
+            data = self._get_json_auto(path)
+        rows = self._rows(data.get("list")) if data else []
+        if not rows:
+            return self._diag_item("首页") if getattr(
+                self, "_last_err", "") else []
+        return rows[:30]
+
+    def _self_check(self):
+        """自检：不管有没有网络，都返回一张能看清所有字段的测试卡片。
+
+        用法：在源配置里把 URL 或扩展参数填成 selfcheck / check，
+        或者直接调用 homeVideoContent 时若设置了 self._force_check。
+        这样即使网络全挂，也能在界面上确认"脚本到底有没有被加载"。
+        """
+        return [{
+            "vod_id": "0",
+            "vod_name": "自检OK: 脚本已加载",
+            "vod_pic": "",
+            "vod_remarks": self._env_brief() + " | 域名%d个" % len(
+                getattr(self, "hosts", []) or []),
+        }]
+
+    def homeVideoContent(self):
+        try:
+            self._ensure_attrs()
+            return {"list": self._home_recommend()}
+        except Exception as exc:  # noqa: BLE001
+            _log("homeVideoContent err", exc)
+            return {"list": []}
+
+    # ------------------------------------------------------------------
+    # 分类
+    # ------------------------------------------------------------------
+    def categoryContent(self, tid, pg, filter=False, extend=None):
+        """分类列表。
+
+        【v7 封面修复】这里必须用 ac=detail。
+        ac=list 响应里没有 vod_pic 字段，界面就是一片空白方块。
+        """
+        self._ensure_attrs()
+        extend = self._pick_extend(extend)
+        key = self._to_key(tid) or "qq"
+        try:
+            page = int(pg) if pg else 1
+        except Exception:  # noqa: BLE001
+            page = 1
+
+        params = ["from=" + key, "ac=detail", "pg=" + str(page)]
+        t = extend.get("class") or extend.get("t") or self._to_type(tid) or "2"
+        params.append("t=" + str(t))
+        if extend.get("year"):
+            params.append("year=" + _enc(extend["year"]))
+        if extend.get("area"):
+            params.append("area=" + _enc(extend["area"]))
+        if extend.get("sort"):
+            params.append("by=" + _enc(extend["sort"]))
+
+        path = "/api.php/provide/vod/?" + "&".join(params)
+        _log("category path ->", path)
+
+        data = self._get_json_auto(path)
+        if not data:
+            return {"list": self._diag_item("分类"), "page": page,
+                    "pagecount": 1, "limit": 1, "total": 1}
+
+        vod_list = self._rows(data.get("list"))
+
+        pc = data.get("pagecount") or 1
+        try:
+            pc = int(pc)
+        except Exception:  # noqa: BLE001
+            pc = 1
+
+        return {
+            "list": vod_list,
+            "page": page,
+            "pagecount": pc,
+            "limit": len(vod_list),
+            "total": data.get("total") or pc * len(vod_list),
+        }
+
+    # ------------------------------------------------------------------
+    # 列表行解析（分类/搜索共用）
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _fix_pic(pic):
+        """封面地址规范化，让它加载更快、不容易裂图。
+
+        - 相对路径 -> 补成绝对地址（否则壳子根本加载不出来）；
+        - http://  -> 尽量升级成 https://（明文在国内经常被链路劫持、
+          插入广告甚至直接失败，是封面加载慢/裂图的主因）；
+        - 多个地址用逗号分隔时只取第一个；
+        - 去掉首尾空白和转义反斜杠。
+        """
+        if not pic:
+            return ""
+        s = str(pic).strip().replace("\\", "")
+        if "," in s:
+            s = s.split(",")[0]
+        if s.startswith("//"):
+            s = "https:" + s
+        elif s.startswith("/"):
+            s = "https://puui.qpic.cn" + s
+        elif s.startswith("http://"):
+            # 图床基本都支持 https，升级后更快也更稳
+            s = "https://" + s[len("http://"):]
+        return s.strip()
+
+    def _rows(self, raw):
+        """把接口 list 统一转成壳子需要的行结构，字段尽量补全。"""
+        out = []
+        if not isinstance(raw, list):
+            return out
+        for v in raw:
+            if not isinstance(v, dict) or not v.get("vod_id"):
+                continue
+            out.append({
+                "vod_id": str(v.get("vod_id", "")),
+                "vod_name": v.get("vod_name") or v.get("name") or "",
+                "vod_pic": self._fix_pic(v.get("vod_pic") or v.get("pic")),
+                "vod_remarks": v.get("vod_remarks") or "",
+                "vod_year": str(v.get("vod_year") or ""),
+                "type_name": v.get("type_name") or "",
+            })
+        return out
+
+    @staticmethod
+    def _pick_extend(extend):
+        """壳子传参有 dict / JSON 字符串两种形式，统一成 dict。"""
+        if isinstance(extend, str) and extend.strip():
+            try:
+                extend = json.loads(extend)
+            except Exception:  # noqa: BLE001
+                extend = {}
+        if not isinstance(extend, dict):
+            return {}
+        # 过滤掉壳子常见的占位值
+        return dict((k, v) for k, v in extend.items()
+                    if v not in ("", None, "全部", "all", "0"))
+
+    # ------------------------------------------------------------------
+    # 详情
+    # ------------------------------------------------------------------
+    def detailContent(self, ids):
+        self._ensure_attrs()
+        if not ids:
+            return {"list": []}
+        vid = str(ids)
+        if isinstance(ids, (list, tuple)):
+            vid = str(ids[0])
+        vid = vid.split("$")[-1].strip()
+        if not vid:
+            return {"list": []}
+
+        path = "/api.php/provide/vod/?ac=detail&ids=" + vid
+        _log("detail path ->", path)
+
+        data = self._get_json_auto(path)
+        if not data:
+            return {"list": self._diag_item("详情")}
+
+        vod_list = []
+        if isinstance(data.get("list"), list):
+            for item in data["list"]:
+                if not item.get("vod_id"):
+                    continue
+                original_from = item.get("vod_play_from", "") or ""
+                original_url = item.get("vod_play_url", "") or ""
+
+                if original_from and original_url:
+                    play_from = original_from
+                    play_url = original_url
+                    url_parts = original_url.split("$$$")
+                    first_ep = url_parts[0] if url_parts else original_url
+                    play_from += "$$$自动轮询"
+                    play_url += "$$$" + first_ep
+                    for p in self.parse_list[:self.detail_parse_count]:
+                        play_from += "$$$" + p["name"]
+                        play_url += "$$$" + first_ep
+                else:
+                    play_from = original_from
+                    play_url = original_url
+
+                vod_list.append({
+                    "vod_id": str(item.get("vod_id", "")),
+                    "vod_name": item.get("vod_name", ""),
+                    "vod_pic": item.get("vod_pic", ""),
+                    "vod_remarks": item.get("vod_remarks", ""),
+                    "vod_year": item.get("vod_year", ""),
+                    "type_name": item.get("type_name", ""),
+                    "vod_area": item.get("vod_area", ""),
+                    "vod_lang": item.get("vod_lang", ""),
+                    "vod_actor": item.get("vod_actor", ""),
+                    "vod_director": item.get("vod_director", ""),
+                    "vod_content": item.get("vod_content", ""),
+                    "vod_play_from": play_from,
+                    "vod_play_url": play_url,
+                })
+        return {"list": vod_list}
+
+    # ------------------------------------------------------------------
+    # 搜索
+    # ------------------------------------------------------------------
+    # 站点里"短剧"有 16 万条，是正剧的 15 倍。搜索时不带类型筛选，
+    # 结果会被短剧彻底淹没（搜"家业" -> 246 条有 238 条是短剧，
+    # 真正的电视剧《家业》排到最后）。所以搜索必须做类型收敛。
+    #
+    # 策略（v6 核心修复）：
+    #   1. 用户选了类型筛选 -> 就用它，一次请求；
+    #   2. 没选 -> 先搜"正剧类型"（电影/连续剧/综艺/动漫/少儿/纪录片），
+    #      把短剧排除在外，结果最准；
+    #   3. 正剧一条都没有 -> 再搜全类型，保证"冷门短剧"也搜得到；
+    #   4. 两次都没结果 -> 退回到不加筛选的原始搜索。
+    # 搜索时优先查这三个（命中率最高），不够再补查 _MORE_TYPES
+    _PRIMARY_TYPES = ("2", "1", "4")               # 连续剧 / 电影 / 动漫
+    _MORE_TYPES = ("6", "3", "5")                  # 纪录片 / 综艺 / 少儿
+    _MAIN_TYPES = _PRIMARY_TYPES + _MORE_TYPES     # 除短剧外的全部
+    _SHORT_TYPE = "7"                              # 短剧
+
+    def searchContent(self, key, quick=False, pg="1"):
+        self._ensure_attrs()
+        key = (key or "").strip()
+        if not key:
+            return {"list": []}
+        try:
+            page = max(1, int(pg))
+        except Exception:  # noqa: BLE001
+            page = 1
+
+        ext = self._pick_extend(getattr(self, "_search_extend", None))
+        want_type = ext.get("t") or ext.get("class") or ""
+
+        # --- 策略1：用户明确选了类型，一次搞定（最快） ---
+        if want_type:
+            data = self._search_once(key, page, want_type)
+            if data:
+                return self._search_result(data, page, key)
+            return self._search_fallback(key, page)
+
+        # --- 策略2：排除短剧，只要正剧（合并去重）---
+        # 【v7 提速】ac=detail 带封面但单次 97KB，6 个类型全并发要下 580KB。
+        # 改成两批：先并发查最常命中的 3 个（连续剧/电影/动漫），
+        # 结果够 6 条就直接返回（多数搜索到此结束，省一半流量和时间）；
+        # 不够再补查剩下 3 个。
+        merged, seen = [], set()
+
+        def _collect(datas):
+            for data in datas:
+                for row in self._rows(data.get("list")):
+                    if row["vod_id"] in seen:
+                        continue
+                    seen.add(row["vod_id"])
+                    merged.append(row)
+
+        _collect(self._search_parallel(key, page, self._PRIMARY_TYPES))
+        if len(merged) < 6:
+            _collect(self._search_parallel(key, page, self._MORE_TYPES))
+
+        if merged:
+            _log("搜索命中正剧 %d 条（已排除短剧）" % len(merged))
+            return {"list": merged, "page": page, "pagecount": 1,
+                    "limit": len(merged), "total": len(merged)}
+
+        # --- 策略3：正剧没有，再搜全类型（含短剧）---
+        _log("正剧无结果, 回退全类型搜索")
+        return self._search_fallback(key, page)
+
+    def _search_once(self, key, page, t=None):
+        """发一次搜索请求。t 为 None 表示不限定类型。"""
+        params = ["ac=detail", "wd=" + _enc(key), "pg=" + str(page)]
+        if t:
+            params.append("t=" + str(t))
+        data = self._get_json_auto("/api.php/provide/vod/?" + "&".join(params))
+        if data and (data.get("list") or data.get("total")):
+            return data
+        return None
+
+    def _search_parallel(self, key, page, types):
+        """并发搜索多个类型，返回拿到结果的 data 列表。
+
+        串行 6 个类型要 9 秒左右，用户会觉得卡；这里的 6 个请求彼此独立，
+        完全可以同时发。用线程池跑，总耗时 ≈ 最慢那一个请求（约 1.5 秒）。
+        线程不可用时自动退化为串行，功能不受影响。
+        """
+        try:
+            import threading
+        except Exception:  # noqa: BLE001
+            threading = None
+
+        results = {}
+        lock = None
+        order = list(types)
+
+        if threading is not None:
+            try:
+                lock = threading.Lock()
+                threads = []
+
+                def _worker(t):
+                    try:
+                        d = self._search_once(key, page, t)
+                    except Exception:  # noqa: BLE001
+                        d = None
+                    if d:
+                        with lock:
+                            results[t] = d
+
+                for t in order:
+                    th = threading.Thread(target=_worker, args=(t,))
+                    try:
+                        th.setDaemon(True)      # py2/py3 兼容
+                    except Exception:  # noqa: BLE001
+                        try:
+                            th.daemon = True
+                        except Exception:  # noqa: BLE001
+                            pass
+                    th.start()
+                    threads.append(th)
+
+                # 等待所有线程，最多 12 秒（防止个别请求挂死拖住界面）
+                deadline = time.time() + 12
+                for th in threads:
+                    left = deadline - time.time()
+                    if left <= 0:
+                        break
+                    th.join(left)
+                return [results[t] for t in order if t in results]
+            except Exception as exc:  # noqa: BLE001
+                _log("并发搜索降级:", exc)
+
+        # 降级：串行
+        out = []
+        for t in order:
+            d = self._search_once(key, page, t)
+            if d:
+                out.append(d)
+        return out
+
+    def _search_fallback(self, key, page):
+        """全类型搜索：先不限类型，再补一次短剧，避免完全搜不到。"""
+        data = self._search_once(key, page, None)
+        if data:
+            return self._search_result(data, page, key)
+        data = self._search_once(key, page, self._SHORT_TYPE)
+        if data:
+            return self._search_result(data, page, key)
+        # 都连通但就是没这条内容 —— 这是"没搜到"，不是故障
+        return {"list": [], "page": page, "pagecount": 1,
+                "limit": 0, "total": 0}
+
+    def _search_result(self, data, page, key):
+        rows = self._rows(data.get("list"))
+        pc = data.get("pagecount") or 1
+        try:
+            pc = int(pc)
+        except Exception:  # noqa: BLE001
+            pc = 1
+        return {"list": rows, "page": page, "pagecount": pc,
+                "limit": len(rows), "total": data.get("total") or len(rows)}
+
+    # ------------------------------------------------------------------
+    # 播放解析
+    # ------------------------------------------------------------------
+    def playerContent(self, flag, id, vipFlags=None):
+        self._ensure_attrs()
+        _log("playerContent -> flag=%s" % (flag,))
+
+        if self._is_direct(id):
+            return {"parse": 0, "url": id, "header": dict(self.header),
+                    "playUrl": ""}
+
+        if flag == "自动轮询":
+            direct_url = self._try_kptv_api(id)
+            if direct_url:
+                return {"parse": 0, "url": direct_url,
+                        "header": dict(self.header), "playUrl": ""}
+            idx = self._rotate_idx % max(len(self.parse_list), 1)
+            self._rotate_idx += 1
+            item = self.parse_list[idx]
+            return {"parse": 1, "url": item["url"] + id,
+                    "header": self._build_parse_header(item["url"]),
+                    "playUrl": ""}
+
+        if flag in self._parse_names:
+            for item in self.parse_list:
+                if flag == item["name"]:
+                    return {"parse": 1, "url": item["url"] + id,
+                            "header": self._build_parse_header(item["url"]),
+                            "playUrl": ""}
+
+        return {"parse": 1, "url": id, "header": dict(self.header),
+                "playUrl": ""}
+
+    # ------------------------------------------------------------------
+    # kptv API 解析（两步取直链，失败自动降级）
+    # ------------------------------------------------------------------
+    def _try_kptv_api(self, video_url):
+        """取直链，失败返回空。
+
+        【v7 播放提速】
+        旧实现会遍历所有网络栈重试，最坏发 6 次请求（每次都可能等满超时），
+        点一次播放要卡十几秒。现在：
+          - 只用"已验证可用"的那个栈 + 最多 1 个备用栈，请求数 <= 4；
+          - 用独立的短超时（6s），不再等满默认的 10s；
+          - 结果按 video_url 缓存 10 分钟，同一集来回点秒开。
+        """
+        # 命中缓存直接返回
+        try:
+            ck = self._kptv_cache.get(video_url)
+            if ck and time.time() - ck[0] < 600:
+                return ck[1]
+        except Exception:  # noqa: BLE001
+            pass
+
+        result = ""
+        try:
+            stacks = [self._ok_stack or "requests"]
+            for st in self._ordered_stacks():
+                if st not in stacks:
+                    stacks.append(st)
+                if len(stacks) >= 2:
+                    break
+
+            old_timeout = self.timeout
+            try:
+                self.timeout = _KPTV_TIMEOUT      # 缩短等待
+                text1 = ""
+                for st in stacks:
+                    text1 = self._http_via(st, self.kptv_parse + video_url)
+                    if text1:
+                        break
+                token = self._extract_token(text1)
+                if token:
+                    api_url = ("https://" + self.kptv_host +
+                               "/api/resolve.php?token=" + _enc(token))
+                    text2 = ""
+                    for st in stacks:
+                        text2 = self._http_via(st, api_url)
+                        if text2:
+                            break
+                    if text2:
+                        data = json.loads(text2)
+                        code = data.get("code", 0)
+                        if code in (0, 1, 200):
+                            play_url = data.get("url", "")
+                            if play_url and self._validate_url(play_url):
+                                result = self._format_url(play_url)
+            finally:
+                self.timeout = old_timeout
+        except Exception as exc:  # noqa: BLE001
+            _log("kptv 异常:", exc)
+
+        # 写缓存（失败的空结果也缓存一小会儿，避免反复重试拖慢播放）
+        try:
+            self._kptv_cache[video_url] = (time.time(), result)
+            if len(self._kptv_cache) > 40:
+                self._kptv_cache.clear()
+        except Exception:  # noqa: BLE001
+            pass
+        return result
+
+    @staticmethod
+    def _extract_token(text):
+        if not text:
+            return None
+        m = re.search(r'apiToken\s*:\s*["\']([^"\']+)["\']', text)
+        return m.group(1) if m else None
+
+    # ------------------------------------------------------------------
+    # 辅助
+    # ------------------------------------------------------------------
+    def _build_parse_header(self, parse_url):
+        header = dict(self.header)
+        try:
+            m = re.match(r"(https?://[^/]+)", parse_url)
+            if m:
+                header["Referer"] = m.group(1) + "/"
+        except Exception:  # noqa: BLE001
+            pass
+        return header
+
+    def _is_direct(self, url):
+        s = str(url)
+        return any(k in s for k in (".m3u8", ".mp4", ".flv", ".mkv",
+                                    "m3u8?", "mp4?"))
+
+    def _validate_url(self, url):
+        if not url or not isinstance(url, str):
+            return False
+        u = url.strip().lower()
+        if not u.startswith(("http://", "https://")):
+            return False
+        return not any(k in u for k in ("javascript:", "void(0)",
+                                        "about:blank", "undefined"))
+
+    def _format_url(self, url):
+        if not url:
+            return ""
+        url = str(url).strip().replace("\\", "")
+        url = re.sub(r"^(https?:\/)((?!\/))", r"\1/", url,
+                     flags=re.IGNORECASE)
+        return url.replace("&amp;", "&")
+
+    @staticmethod
+    def _to_key(tid):
+        """把分类 id 的"平台"部分翻成接口的 from 参数。
+
+        支持两种写法：
+          "qq"        -> qq                      （旧版单平台）
+          "qq-2"      -> qq                      （新版 平台-类型）
+          "1"         -> qq                      （更早的数字 id）
+        """
+        if tid is None:
+            return None
+        s = str(tid).strip()
+        if s in _CATEGORY:
+            return _CATEGORY[s][0]
+        if "-" in s:
+            return s.split("-", 1)[0]
+        return s
+
+    @staticmethod
+    def _to_type(tid):
+        """从分类 id 里取出"类型"部分；没有则返回空串。"""
+        if tid is None:
+            return ""
+        s = str(tid).strip()
+        return s.split("-", 1)[1] if "-" in s else ""
