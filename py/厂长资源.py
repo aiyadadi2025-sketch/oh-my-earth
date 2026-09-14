@@ -18,6 +18,14 @@ from urllib.parse import quote, unquote, urlparse, parse_qs
 
 import requests
 
+# 雷池WAF 基于 TLS 指纹拦截 requests; 装了就降级用 curl_cffi 伪装真实浏览器
+try:
+    from curl_cffi import requests as _cffi_requests
+    _HAS_CFFI = True
+except Exception:
+    _cffi_requests = None
+    _HAS_CFFI = False
+
 sys.path.append('..')
 
 # OK影视(drpy) 引擎要求 Spider 继承 base.spider 基类;
@@ -109,29 +117,40 @@ class Spider(_BaseSpider):
     def _probe(self, base):
         """探测某域名是否可用: 200 且 非雷池页"""
         try:
-            r = self.session.get(base + '/', timeout=8)
-            if r.status_code == 200 and not self._is_blocked(r.text):
-                return True
+            text = self._fetch_text(base + '/')
+            return bool(text)
+        except Exception:
+            return False
+
+    def _fetch_text(self, url):
+        """抓取 URL 正文; 优先 curl_cffi(绕过雷池TLS指纹拦截), 回退 requests; 拦截/失败返回 None"""
+        if _HAS_CFFI:
+            try:
+                r = _cffi_requests.get(url, impersonate='chrome124', timeout=self._timeout,
+                                       headers={'User-Agent': HEADERS['User-Agent'],
+                                                'Accept-Language': 'zh-CN,zh;q=0.9'})
+                if r.status_code == 200 and not self._is_blocked(r.text or ''):
+                    return r.text
+            except Exception:
+                pass
+        # 回退: requests
+        try:
+            r = self.session.get(url, timeout=self._timeout)
+            if r.status_code == 200 and not self._is_blocked(r.text or ''):
+                r.encoding = r.apparent_encoding or 'utf-8'
+                return r.text
         except Exception:
             pass
-        return False
+        return None
 
     def _get_path(self, path):
         """按当前base抓相对路径; 失败则轮换域名重试, 返回(text, base)"""
-        tried = []
         order = [self._base] + [b for b in BASES if b != self._base]
         for base in order:
-            try:
-                url = base + path
-                r = self.session.get(url, timeout=self._timeout)
-                if r.status_code == 200 and not self._is_blocked(r.text):
-                    self._base = base
-                    r.encoding = r.apparent_encoding or 'utf-8'
-                    return r.text, base
-                tried.append(base)
-            except Exception:
-                tried.append(base)
-                continue
+            text = self._fetch_text(base + path)
+            if text:
+                self._base = base
+                return text, base
         return None, self._base
 
     # ---------- HTML解析工具 ----------
