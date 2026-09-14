@@ -329,17 +329,67 @@ class Spider:
             pass
 
 
+# ==================== 模块级接口（OK影视 / TVBox 兼容） ====================
+_spider = None
+
+
+def init(extend=""):
+    global _spider
+    if _spider is None:
+        _spider = Spider()
+        _spider.init(extend)
+
+
+def homeContent(filter=False):
+    return _spider.homeContent(filter) if _spider else {'class': CLASSES, 'list': []}
+
+
+def homeVideoContent():
+    return _spider.homeVideoContent() if _spider else {'list': []}
+
+
+def categoryContent(tid, pg, filter=False, extend={}):
+    return _spider.categoryContent(tid, pg, filter, extend) if _spider else {'list': [], 'page': '1', 'pagecount': '1'}
+
+
+def detailContent(ids):
+    return _spider.detailContent(ids) if _spider else {'list': []}
+
+
+def searchContent(key, quick=False, pg='1'):
+    return _spider.searchContent(key, quick, pg) if _spider else {'list': []}
+
+
+def playerContent(flag, id, vipFlags=False):
+    return _spider.playerContent(flag, id, vipFlags) if _spider else {'parse': 0, 'jx': 0, 'playUrl': '', 'url': '', 'header': {}}
+
+
+def localProxy(param):
+    return _spider.localProxy(param) if _spider else {}
+
+
+def getName():
+    return '枝枝影视'
+
+
+def isVideoFormat(url):
+    return False
+
+
+def manualVideoCheck():
+    return False
+
+
 if __name__ == '__main__':
     import sys as _s
     _s.stdout.reconfigure(encoding='utf-8', errors='replace')
-    sp = Spider()
-    sp.init('')
-    print('home classes:', [c['type_name'] for c in sp.homeContent()['class']])
-    c = sp.categoryContent('6,7,8,9,10,11,12,20,34', 1)
+    init('')
+    print('home classes:', [c['type_name'] for c in homeContent()['class']])
+    c = categoryContent('6,7,8,9,10,11,12,20,34', 1)
     print('cat list:', len(c['list']), 'pagecount:', c['pagecount'])
     if c['list']:
         vid = c['list'][0]['vod_id']
-        d = sp.detailContent([vid])
+        d = detailContent([vid])
         v = d['list'][0]
         print('detail:', v['vod_name'])
         print('play_from:', v['vod_play_from'])
