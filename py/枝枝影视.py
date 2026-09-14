@@ -51,9 +51,20 @@ HEADERS = {
     'Origin': 'https://www.zzoc.cc',
 }
 
+# OK影视(drpy) 引擎要求 Spider 继承 base.spider 基类；
+# 本地无 base 模块时降级为 object，保证脚本可独立自测。
+try:
+    from base.spider import Spider as _BaseSpider
+except Exception:
+    _BaseSpider = object
 
-class Spider:
+
+class Spider(_BaseSpider):
     def __init__(self):
+        try:
+            _BaseSpider.__init__(self)
+        except Exception:
+            pass
         self.site_url = 'https://www.zzoc.cc/'
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
@@ -227,7 +238,7 @@ class Spider:
 
     # ---------- TVBox 接口 ----------
     def homeContent(self, filter=False):
-        data = {'class': CLASSES, 'list': []}
+        data = {'class': CLASSES, 'filters': {}, 'list': []}
         # ac=detail 模式才返回海报 vod_pic（ac=list 精简模式无图）
         d = self._fetch_json(API_FF + '?ac=detail&h=24')
         if d:
