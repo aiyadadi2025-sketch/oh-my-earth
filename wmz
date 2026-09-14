@@ -186,8 +186,8 @@
 {      "key": "爱奇艺",      "name": "🥇爱奇艺｜影视",      "type": 3,      "api": "./js/drpy2.min.js",      "ext": "./js/爱奇艺.js" ,"searchable":1,"changeable":1,"quickSearch":1,"filterable":1   },
 {      "key": "腾讯",      "name": "🥇腾讯｜影视",      "type": 3,      "api": "./js/drpy2.min.js",      "ext": "./js/腾讯视频.js","searchable":1,"changeable":1,"quickSearch":1,"filterable":1    },
 {      "key": "芒果",      "name": "🥇芒果｜影视",      "type": 3,      "api": "./js/drpy2.min.js",      "ext": "./js/芒果视频.js","searchable":1,"changeable":1,"quickSearch":1,"filterable":1   },
-{ "key": "影视仓", "name": "🥇枝枝｜影视", "type": 3, "api": "./py/枝枝影视.py"  },
-{ "key": "影视仓", "name": "🥇旺旺｜影视", "type": 3, "api": "./py/旺旺影视.py"  },
+{ "key": "枝枝", "name": "🥇枝枝｜影视", "type": 3, "api": "./py/枝枝影视.py"  },
+{ "key": "旺旺", "name": "🥇旺旺｜影视", "type": 3, "api": "./py/旺旺影视.py"  },
 {
       "key": "荐片123",
       "name": "🥇荐片｜影视",
