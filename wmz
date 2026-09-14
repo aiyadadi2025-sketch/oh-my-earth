@@ -3,7 +3,9 @@
       "name": "🥇抖音｜APP",
       "type": 3,
       "api": "./py/抖音.py"
-    },{
+    },
+    { "key": "test1234", "name": "🥇test1234｜影视", "type": 3, "api": "./py/viptvb06.py"  },
+    {
       "key": "爱优腾",
       "name": "🥇爱优腾芒哔｜影视",
       "type": 3,
