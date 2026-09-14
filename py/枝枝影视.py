@@ -285,19 +285,48 @@ class Spider:
             return {'list': []}
         return {'list': self._fmt_list(d.get('list', []))}
 
+    def homeVideoContent(self):
+        # OK影视 调用: 返回首页推荐内容
+        try:
+            d = self._fetch_json(API_FF + '?ac=detail&h=12')
+            if d and d.get('list'):
+                return {'list': self._fmt_list(d['list'])[:20]}
+        except Exception:
+            pass
+        return {'list': []}
+
     def playerContent(self, flag, id, vipFlags=False):
         # id 为 m3u8 直链，直接返回
         if not id:
             return {}
         if isinstance(id, list):
             id = id[0] if id else ''
-        if not str(id).startswith('http'):
+        url = str(id)
+        if not url.startswith('http'):
             return {}
-        return {'parse': 0, 'url': id, 'header': {
+        return {'parse': 0, 'jx': 0, 'playUrl': '', 'url': url, 'header': {
             'User-Agent': HEADERS['User-Agent'],
             'Referer': 'https://www.zzoc.cc/',
             'Origin': 'https://www.zzoc.cc',
         }}
+
+    def localProxy(self, param):
+        return {}
+
+    def getName(self):
+        return '枝枝影视'
+
+    def isVideoFormat(self, url):
+        return False
+
+    def manualVideoCheck(self):
+        return False
+
+    def destroy(self):
+        try:
+            self.session.close()
+        except Exception:
+            pass
 
 
 if __name__ == '__main__':
