@@ -20,6 +20,13 @@ import requests
 
 sys.path.append('..')
 
+# OK影视(drpy) 引擎要求 Spider 继承 base.spider 基类;
+# 本地无 base 模块时降级为 object, 保证脚本可独立自测。
+try:
+    from base.spider import Spider as _BaseSpider
+except Exception:
+    _BaseSpider = object
+
 # 内容域名池(逐个探测, 取第一个能连通的)
 BASES = [
     'https://www.4kcz.com',
@@ -64,8 +71,12 @@ HEADERS = {
 }
 
 
-class Spider:
+class Spider(_BaseSpider):
     def __init__(self):
+        try:
+            _BaseSpider.__init__(self)
+        except Exception:
+            pass
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
         self._timeout = 15
@@ -204,10 +215,14 @@ class Spider:
 
     # ---------- TVBox 接口 ----------
     def homeContent(self, filter=False):
-        data = {'class': CLASSES, 'list': []}
+        data = {'class': CLASSES, 'filters': {}, 'list': []}
         text, _ = self._get_path('/')
         data['list'] = self._parse_cards(text)
         return data
+
+    def homeVideoContent(self):
+        text, _ = self._get_path('/')
+        return {'list': self._parse_cards(text)}
 
     def categoryContent(self, tid, pg, filter=False, extend={}):
         pg = int(pg) if str(pg).isdigit() else 1
@@ -340,10 +355,79 @@ class Spider:
                 real = unquote(mu.group(1))
         if not real:
             return {}
-        return {'parse': 0, 'url': real, 'header': {
+        return {'parse': 0, 'jx': 0, 'playUrl': '', 'url': real, 'header': {
             'User-Agent': HEADERS['User-Agent'],
             'Referer': iframe,
         }}
+
+    def localProxy(self, param):
+        return {}
+
+    def getName(self):
+        return '厂长资源'
+
+    def isVideoFormat(self, url):
+        return False
+
+    def manualVideoCheck(self):
+        return False
+
+    def destroy(self):
+        try:
+            self.session.close()
+        except Exception:
+            pass
+
+
+# ==================== 模块级接口（OK影视 / TVBox 兼容） ====================
+_spider = None
+
+
+def init(extend=""):
+    global _spider
+    if _spider is None:
+        _spider = Spider()
+        _spider.init(extend)
+
+
+def homeContent(filter=False):
+    return _spider.homeContent(filter) if _spider else {'class': CLASSES, 'filters': {}, 'list': []}
+
+
+def homeVideoContent():
+    return _spider.homeVideoContent() if _spider else {'list': []}
+
+
+def categoryContent(tid, pg, filter=False, extend={}):
+    return _spider.categoryContent(tid, pg, filter, extend) if _spider else {'list': [], 'page': '1', 'pagecount': '1'}
+
+
+def detailContent(ids):
+    return _spider.detailContent(ids) if _spider else {'list': []}
+
+
+def searchContent(key, quick=False, pg='1'):
+    return _spider.searchContent(key, quick, pg) if _spider else {'list': []}
+
+
+def playerContent(flag, id, vipFlags=False):
+    return _spider.playerContent(flag, id, vipFlags) if _spider else {'parse': 0, 'jx': 0, 'playUrl': '', 'url': '', 'header': {}}
+
+
+def localProxy(param):
+    return _spider.localProxy(param) if _spider else {}
+
+
+def getName():
+    return '厂长资源'
+
+
+def isVideoFormat(url):
+    return False
+
+
+def manualVideoCheck():
+    return False
 
 
 if __name__ == '__main__':
