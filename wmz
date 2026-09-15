@@ -191,6 +191,7 @@
 { "key": "枝枝", "name": "🥇枝枝｜影视", "type": 3, "api": "./py/枝枝影视.py" ,  "searchable": 1, "quickSearch": 1,"filterable": 1, "changeable": 1},
 { "key": "旺旺", "name": "🥇旺旺｜影视", "type": 3, "api": "./py/旺旺影视.py" ,  "searchable": 1, "quickSearch": 1,"filterable": 1, "changeable": 1},
 { "key": "厂长资源", "name": "🥇厂长｜影视", "type": 3, "api": "./py/厂长资源.py" ,  "searchable": 1, "quickSearch": 1,"filterable": 1, "changeable": 1},
+{ "key": "星河影视", "name": "🥇星河｜影视", "type": 3, "api": "./py/星河影视.py" ,  "searchable": 1, "quickSearch": 1,"filterable": 1, "changeable": 1},
 {
       "key": "荐片123",
       "name": "🥇荐片｜影视",
