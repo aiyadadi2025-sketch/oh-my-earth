@@ -1209,6 +1209,87 @@ class Spider(_Base):
 
 
 # ============================================================
+# OK影视(drpy) 函数式接口适配层
+# ------------------------------------------------------------
+# OK影视引擎按模块级函数调用, 且期望返回 JSON 字符串;
+# 纯类式接口在 OK影视 中只能走通"推荐"(homeVideoContent 缓存),
+# 分类/详情/搜索全部失效。这里把模块级函数桥接到 Spider 实例,
+# 类式接口保持原样, TVBox 侧行为不受影响。
+# ============================================================
+_Spider = None
+
+
+def _get_spider():
+    global _Spider
+    if _Spider is None:
+        _Spider = Spider()
+    return _Spider
+
+
+def _to_json(obj):
+    return json.dumps(obj, ensure_ascii=False)
+
+
+def homeContent(filter=False, *args):
+    try:
+        return _to_json(_get_spider().homeContent(filter))
+    except Exception:
+        return _to_json({"class": ALL_CLASSES, "filters": ALL_FILTERS, "list": []})
+
+
+def homeVideoContent():
+    try:
+        return _to_json(_get_spider().homeVideoContent())
+    except Exception:
+        return _to_json({"list": []})
+
+
+def categoryContent(tid, pg="1", filter=False, extend=None, *args):
+    try:
+        return _to_json(_get_spider().categoryContent(tid, pg, filter, extend))
+    except Exception:
+        return _to_json(Spider._empty_category(1))
+
+
+def detailContent(ids):
+    try:
+        return _to_json(_get_spider().detailContent(ids))
+    except Exception:
+        return _to_json({"list": []})
+
+
+def searchContent(key, quick=False, pg="1"):
+    try:
+        return _to_json(_get_spider().searchContent(key, quick, pg))
+    except Exception:
+        return _to_json({"list": []})
+
+
+def playerContent(flag, id, vipFlags="", *args):
+    try:
+        return _to_json(_get_spider().playerContent(flag, id, vipFlags))
+    except Exception:
+        return _to_json({"parse": 0, "playUrl": "", "url": str(id or "")})
+
+
+def localProxy(param):
+    try:
+        return _get_spider().localProxy(param)
+    except Exception:
+        return {"code": 500, "headers": {}, "body": b""}
+
+
+def getName():
+    return "速影TV"
+
+
+def isVideoFormat(url):
+    return bool(re.search(
+        r'\.(m3u8|mp4|flv|mkv|avi|mov|ts|mpg|mpeg)(\?|#|$)',
+        (url or ''), re.I))
+
+
+# ============================================================
 # 本地测试
 # ============================================================
 if __name__ == '__main__':
