@@ -97,8 +97,6 @@
 {"key":"永乐影视","name":"🎡永乐｜蓝光影视","type":3,"api":"csp_XBPQ","ext":"https://g.blfrp.cn/https://raw.githubusercontent.com/tushen6/Tomorrow/master/XBPQ/永乐影视.json"},
 {"key":"1905","name":"🎥1905｜蓝光秒播","type":3,"api":"csp_Web1905","searchable":1,"quickSearch":0,"filterable":0},
 {"key":"哔哩视频","name":"🅱️哔哩｜影视资源","type":3,"api":"csp_BiliYS","searchable":1,"quickSearch":0,"filterable":0,"changeable":0,"style":{"type":"rect","ratio":1.433},"ext":{"cookie":"http://127.0.0.1:9978/file/TVBox/bili_cookie.txt"}}, 
-{ "key": "趣看看短剧", "name": "🥇趣看看｜短剧", "type": 3, "api": "./py/剧屋.py" ,  "searchable": 1, "quickSearch": 1,"filterable": 1, "changeable": 1},
-{ "key": "牛牛短剧", "name": "🥇牛牛｜短剧", "type": 3, "api": "./py/牛牛短剧.py" ,  "searchable": 1, "quickSearch": 1,"filterable": 1, "changeable": 1},
 { "key": "花生短剧", "name": "🥇花生｜短剧", "type": 3, "api": "./py/花生短剧.py" ,  "searchable": 1, "quickSearch": 1,"filterable": 1, "changeable": 1},
 { "key": "橘子动漫", "name": "🥇橘子｜动漫", "type": 3, "api": "./py/橘子动漫.py",  "searchable": 1, "quickSearch": 1,"filterable": 1, "changeable": 1 },
 {"key":"次元动漫","name":"🎀次元丨动漫追番","type":3,"searchable":1,"api":"csp_AppGet","ext":{"url":"https://www.cyfz.top","dataKey":"e72cdfd629e8895d","dataIv":"e72cdfd629e8895d"}},
